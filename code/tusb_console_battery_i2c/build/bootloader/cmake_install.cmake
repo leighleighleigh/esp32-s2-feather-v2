@@ -34,7 +34,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader/esp-idf/cmake_install.cmake")
+  include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_battery_i2c/build/bootloader/esp-idf/cmake_install.cmake")
 
 endif()
 
@@ -46,5 +46,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_battery_i2c/build/bootloader/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

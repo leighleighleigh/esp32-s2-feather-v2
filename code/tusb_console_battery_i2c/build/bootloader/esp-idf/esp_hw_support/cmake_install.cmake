@@ -34,7 +34,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader/esp-idf/esp_hw_support/port/esp32s2/cmake_install.cmake")
+  include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_battery_i2c/build/bootloader/esp-idf/esp_hw_support/port/esp32s2/cmake_install.cmake")
 
 endif()
 

@@ -232,7 +232,7 @@ rule C_STATIC_LIBRARY_LINKER____idf_main
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = /usr/bin/cmake -S/home/leigh/esp/esp-idf/components/bootloader/subproject -B/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader
+  command = /usr/bin/cmake -S/home/leigh/esp/esp-idf/components/bootloader/subproject -B/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_battery_i2c/build/bootloader
   description = Re-running CMake...
   generator = 1
 

@@ -1,4 +1,4 @@
-# Install script for directory: /home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/main
+# Install script for directory: /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_battery_i2c/main
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
