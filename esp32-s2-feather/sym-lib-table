@@ -1,0 +1,6 @@
+(sym_lib_table
+  (lib (name "ESP32-S2-WROOM")(type "Legacy")(uri "/home/leigh/Documents/Kicad Parts Library/Symbol Libs/ESP32-S2-WROOM.lib")(options "")(descr ""))
+  (lib (name "TLV75533PDBVR")(type "Legacy")(uri "/home/leigh/Documents/Kicad Parts Library/Symbol Libs/TLV75533PDBVR.lib")(options "")(descr ""))
+  (lib (name "DX07S016JA1R1500")(type "Legacy")(uri "/home/leigh/Documents/Kicad Parts Library/Symbol Libs/DX07S016JA1R1500.lib")(options "")(descr ""))
+  (lib (name "MAX17048G_T10")(type "Legacy")(uri "/home/leigh/Documents/Kicad Parts Library/Symbol Libs/MAX17048G_T10.lib")(options "")(descr ""))
+)

@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/CMakeFiles/bootloader
+/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/CMakeFiles/bootloader.rule
+/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/CMakeFiles/bootloader-complete.rule
+/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
+/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/leigh/esp/esp-idf/examples/peripherals/usb/tusb_console_with_i2c/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule

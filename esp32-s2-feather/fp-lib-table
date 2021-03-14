@@ -1,0 +1,5 @@
+(fp_lib_table
+  (lib (name "Footprints")(type "KiCad")(uri "/home/leigh/Documents/Kicad Parts Library/Footprints.pretty")(options "")(descr ""))
+  (lib (name "UHD1110")(type "KiCad")(uri "/home/leigh/Documents/Kicad Parts Library/Footprint Libs/UHD1110.pretty")(options "")(descr ""))
+  (lib (name "PTS636")(type "KiCad")(uri "/home/leigh/Documents/Kicad Parts Library/Footprint Libs/PTS636.pretty")(options "")(descr ""))
+)
