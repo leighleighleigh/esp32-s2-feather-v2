@@ -1,0 +1,20 @@
+{
+    "project_name":       "bootloader",
+    "project_path":       "/home/leigh/esp/esp-idf/components/bootloader/subproject",
+    "build_dir":          "/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader",
+    "config_file":        "/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/sdkconfig",
+    "config_defaults":    "",
+    "app_elf":            "bootloader.elf",
+    "app_bin":            "bootloader.bin",
+    "git_revision":       "v4.3-beta1-dirty",
+    "target":             "esp32s2",
+    "phy_data_partition": "",
+    "monitor_baud" :      "115200",
+    "monitor_toolprefix": "xtensa-esp32s2-elf-",
+    "config_environment" : {
+        "COMPONENT_KCONFIGS" : "/home/leigh/esp/esp-idf/components/efuse/Kconfig;/home/leigh/esp/esp-idf/components/esp32s2/Kconfig;/home/leigh/esp/esp-idf/components/esp_common/Kconfig;/home/leigh/esp/esp-idf/components/esp_system/Kconfig;/home/leigh/esp/esp-idf/components/log/Kconfig;/home/leigh/esp/esp-idf/components/spi_flash/Kconfig",
+        "COMPONENT_KCONFIGS_PROJBUILD" : "/home/leigh/esp/esp-idf/components/bootloader/Kconfig.projbuild;/home/leigh/esp/esp-idf/components/esptool_py/Kconfig.projbuild;/home/leigh/esp/esp-idf/components/partition_table/Kconfig.projbuild"
+    },
+    "build_components" : [ "bootloader", "bootloader_support", "efuse", "esp32s2", "esp_common", "esp_hw_support", "esp_rom", "esp_system", "esptool_py", "hal", "log", "main", "micro-ecc", "partition_table", "soc", "spi_flash", "xtensa", "" ],
+    "build_component_paths" : [ "/home/leigh/esp/esp-idf/components/bootloader", "/home/leigh/esp/esp-idf/components/bootloader_support", "/home/leigh/esp/esp-idf/components/efuse", "/home/leigh/esp/esp-idf/components/esp32s2", "/home/leigh/esp/esp-idf/components/esp_common", "/home/leigh/esp/esp-idf/components/esp_hw_support", "/home/leigh/esp/esp-idf/components/esp_rom", "/home/leigh/esp/esp-idf/components/esp_system", "/home/leigh/esp/esp-idf/components/esptool_py", "/home/leigh/esp/esp-idf/components/hal", "/home/leigh/esp/esp-idf/components/log", "/home/leigh/esp/esp-idf/components/bootloader/subproject/main", "/home/leigh/esp/esp-idf/components/bootloader/subproject/components/micro-ecc", "/home/leigh/esp/esp-idf/components/partition_table", "/home/leigh/esp/esp-idf/components/soc", "/home/leigh/esp/esp-idf/components/spi_flash", "/home/leigh/esp/esp-idf/components/xtensa", "" ]
+}
