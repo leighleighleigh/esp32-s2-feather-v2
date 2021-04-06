@@ -1,12 +1,10 @@
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/rebuild_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/edit_cache.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/uf2.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/dfu-flash.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/menuconfig.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/confserver.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/bootloader.elf.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/gen_project_binary.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/uf2-app.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/erase_flash.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/monitor.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/CMakeFiles/_project_elf_src.dir
@@ -63,8 +61,6 @@
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/partition_table/CMakeFiles/edit_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/bootloader/CMakeFiles/rebuild_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/bootloader/CMakeFiles/edit_cache.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/esp_system/CMakeFiles/edit_cache.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/esp_system/CMakeFiles/rebuild_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/esptool_py/CMakeFiles/edit_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/esptool_py/CMakeFiles/rebuild_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/main/CMakeFiles/rebuild_cache.dir

@@ -48,7 +48,6 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/log/cmake_install.cmake")
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/partition_table/cmake_install.cmake")
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/bootloader/cmake_install.cmake")
-  include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/esp_system/cmake_install.cmake")
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/esptool_py/cmake_install.cmake")
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/bootloader/esp-idf/main/cmake_install.cmake")
 

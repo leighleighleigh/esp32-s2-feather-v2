@@ -1,7 +1,6 @@
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/install/strip.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/rebuild_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/edit_cache.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/uf2.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/dfu-flash.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/dfu.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/install/local.dir
@@ -16,7 +15,6 @@
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/tusb_console_with_i2c.elf.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/dfu-list.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/app.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/uf2-app.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/erase_flash.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/monitor.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/CMakeFiles/_project_elf_src.dir
@@ -130,13 +128,6 @@
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/pthread/CMakeFiles/rebuild_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/pthread/CMakeFiles/edit_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/pthread/CMakeFiles/__idf_pthread.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/install/strip.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/install/local.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/install.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/list_install_components.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/rebuild_cache.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/edit_cache.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/__idf_esp_gdbstub.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_system/CMakeFiles/install/strip.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_system/CMakeFiles/install/local.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_system/CMakeFiles/edit_cache.dir
@@ -428,6 +419,13 @@
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_adc_cal/CMakeFiles/rebuild_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_adc_cal/CMakeFiles/edit_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_adc_cal/CMakeFiles/__idf_esp_adc_cal.dir
+/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/install/strip.dir
+/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/install/local.dir
+/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/install.dir
+/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/list_install_components.dir
+/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/rebuild_cache.dir
+/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/edit_cache.dir
+/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_gdbstub/CMakeFiles/__idf_esp_gdbstub.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_hid/CMakeFiles/install/strip.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_hid/CMakeFiles/install/local.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/esp_hid/CMakeFiles/install.dir
@@ -616,13 +614,6 @@
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/tinyusb/CMakeFiles/rebuild_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/tinyusb/CMakeFiles/edit_cache.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/tinyusb/CMakeFiles/tinyusb.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/touch_element/CMakeFiles/install/strip.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/touch_element/CMakeFiles/install/local.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/touch_element/CMakeFiles/install.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/touch_element/CMakeFiles/list_install_components.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/touch_element/CMakeFiles/rebuild_cache.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/touch_element/CMakeFiles/edit_cache.dir
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/touch_element/CMakeFiles/__idf_touch_element.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/ulp/CMakeFiles/install/strip.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/ulp/CMakeFiles/install/local.dir
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_I2C_SCAN/build/esp-idf/ulp/CMakeFiles/install.dir

@@ -41,10 +41,64 @@
 #define LEDC_LS_CH1_CHANNEL LEDC_CHANNEL_1
 
 #define LEDC_TEST_CH_NUM (2) // There are 16 channels, two groups of 8. One groups is High Speed.
-#define LEDC_TEST_DUTY (16383)
-#define LEDC_TEST_FADE_TIME (10000)
+#define LEDC_TEST_DUTY1 (7000) // 0.5V?
+#define LEDC_TEST_DUTY2 (7100) // 1V?
+#define LEDC_TEST_DUTY3 (7200) // 2V?
+#define LEDC_TEST_DUTY4 (7300) // 3V?
+#define LEDC_TEST_FADE_TIME (10)
 
 static const char *TAG = "example";
+
+static uint8_t lbuf[1024 + 1];
+uint8_t lbufIndex = 0;
+static uint8_t buf[1024 + 1];
+
+uint16_t pwmDuty = 0;
+uint16_t prevPwmDuty = 0;
+
+
+void tinyusb_cdc_rx_callback(int itf, cdcacm_event_t *event)
+{
+    /* initialization */
+    size_t rx_size = 0;
+
+    /* read */
+    esp_err_t ret = tinyusb_cdcacm_read(itf, buf, CONFIG_USB_CDC_RX_BUFSIZE, &rx_size);
+
+    if (ret == ESP_OK) {
+        // Append to long buffer
+        for(int i = 0; i<rx_size; i++)
+        {
+            lbuf[lbufIndex] = buf[i];
+            lbufIndex++;
+        }
+        
+        // buf[rx_size] = '\0';
+        if(buf[rx_size-1] == '\n' || buf[rx_size-1] == '\r' || buf[rx_size] == '\n' || buf[rx_size] == '\n')
+        {
+            lbuf[lbufIndex] = '\0';
+            // Convert to value
+            // uint16_t val = atoi((char*)lbuf);
+            char *eptr;
+            uint16_t val = strtoul((char*)lbuf, &eptr, 10);
+
+            if(val > 1000 && val < 16000){
+                printf("\nGot value: %s\n", lbuf);
+                pwmDuty = val;
+            }else{
+                printf("\nGot data (%d bytes): %s\n", lbufIndex, lbuf);
+            }
+            lbufIndex = 0;
+        }
+        
+    } else {
+        printf("Read error");
+    }
+
+    /* write back */
+    tinyusb_cdcacm_write_queue(itf, buf, rx_size);
+    tinyusb_cdcacm_write_flush(itf, 0);
+}
 
 void app_main(void)
 {
@@ -54,13 +108,21 @@ void app_main(void)
     tinyusb_config_t tusb_cfg = {0}; // the configuration uses default values
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
-    tinyusb_config_cdcacm_t amc_cfg = {0}; // the configuration uses default values
+    tinyusb_config_cdcacm_t amc_cfg = {
+    .usb_dev = TINYUSB_USBDEV_0,
+    .cdc_port = TINYUSB_CDC_ACM_0,
+    .rx_unread_buf_sz = 64,
+    .callback_rx = &tinyusb_cdc_rx_callback,
+    .callback_rx_wanted_char = NULL,
+    .callback_line_state_changed = NULL,
+    .callback_line_coding_changed = NULL
+};
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
 
     esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
     ESP_LOGI(TAG, "USB initialization DONE");
 
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
 
     // Setup the PWM stuff
     int ch;
@@ -116,10 +178,33 @@ void app_main(void)
     // Initialize fade service.
     ledc_fade_func_install(0);
 
-    printf("1. LEDC fade up to duty = %d\n", LEDC_TEST_DUTY);
-    for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++)
+    // uint8_t *data = (uint8_t *) malloc(1024);
+
+    // while(1){
+    //     printf("LEDC duty = %d\n", LEDC_TEST_DUTY1);
+    //     for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++)
+    //     {
+    //         ledc_set_fade_with_time(ledc_channel[ch].speed_mode,ledc_channel[ch].channel, 7000, LEDC_TEST_FADE_TIME);
+    //         ledc_fade_start(ledc_channel[ch].speed_mode,ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
+    //     }
+    //     vTaskDelay(5000/portTICK_PERIOD_MS);
+    // }
+
+
+    while(1){
+    if(pwmDuty != prevPwmDuty)
     {
-        ledc_set_fade_with_time(ledc_channel[ch].speed_mode,ledc_channel[ch].channel, LEDC_TEST_DUTY, LEDC_TEST_FADE_TIME);
-        ledc_fade_start(ledc_channel[ch].speed_mode,ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
+
+        printf("\nLEDC duty = %d\n", pwmDuty);
+        for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++)
+        {
+            ledc_set_fade_with_time(ledc_channel[ch].speed_mode,ledc_channel[ch].channel, pwmDuty, LEDC_TEST_FADE_TIME);
+            ledc_fade_start(ledc_channel[ch].speed_mode,ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
+        }   
+        
+        prevPwmDuty = pwmDuty;
+
     }
+    }
+
 }
