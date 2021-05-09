@@ -170,8 +170,8 @@ void task_bm83_wakeup(void *ignore)
     gpio_config(&io_conf);    
     
     util_bm83_wake();
-    vTaskDelay(3000/portTICK_PERIOD_MS);
-    util_bm83_sleep();
+    // vTaskDelay(3000/portTICK_PERIOD_MS);
+    // util_bm83_sleep();
 
     
     util_bm83_wake();
@@ -183,6 +183,11 @@ void task_bm83_wakeup(void *ignore)
     char POFF_DATA[5] = {0xAA,0x00,0x03,0x02,0x00,0x52,0xA9};
     uart_write_bytes(UART_NUM_1, &POFF_DATA, 7);
 
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    // Enter pairing mode
+    char PAIR_DATA[5] = {0xAA,0x00,0x03,0x02,0x00,0x5D,0x9E};
+    uart_write_bytes(UART_NUM_1, &PAIR_DATA, 7);
 
     // Setup the BM83
     vTaskDelete(NULL);
@@ -275,9 +280,9 @@ void app_main(void)
     // xTaskCreate(&task_max17048_read_vcell, "task_max17048_read_vcell",  2048, NULL, 6, NULL);
 
     xTaskCreate(&task_bm83_wakeup, "task_bm83_wakeup",  2048, NULL, 6, NULL);
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    // vTaskDelay(10000 / portTICK_PERIOD_MS);
     // i2c_driver_delete(i2c_port);
 
     xTaskCreate(rx_task, "uart_rx_task", 1024*2, NULL, configMAX_PRIORITIES, NULL);
-    xTaskCreate(tx_task, "uart_tx_task", 1024*2, NULL, configMAX_PRIORITIES-1, NULL);
+    // xTaskCreate(tx_task, "uart_tx_task", 1024*2, NULL, configMAX_PRIORITIES-1, NULL);
 }
