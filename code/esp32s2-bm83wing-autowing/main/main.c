@@ -169,27 +169,49 @@ void task_bm83_wakeup(void *ignore)
     //configure GPIO with the given settings
     gpio_config(&io_conf);    
     
+    // Press+release the wakeup button/pin
+    printf("Begin BM83 wakeup\n");
     util_bm83_wake();
-    // vTaskDelay(3000/portTICK_PERIOD_MS);
     // util_bm83_sleep();
+    vTaskDelay(1000 / portTICK_PERIOD_MS);   
 
+    // RISE MFB for command
+    // util_bm83_wake();
+
+    /*
+    Commands in decimal to send (including checksums etc)
+    [170, 0, 3, 2, 0, 83, 168]
+    [170, 0, 3, 2, 0, 84, 167]
+    [170, 0, 3, 2, 0, 81, 170]
+    [170, 0, 3, 2, 0, 82, 169]
+    */
     
-    util_bm83_wake();
-    char PON_DATA[5] = {0xAA,0x00,0x03,0x02,0x00,0x51,0xAA};
+    // Press power button
+    char PON_DATA[7] = {170,0,3,2,0,83,168};
+    printf("CMD1\n");
     uart_write_bytes(UART_NUM_1, &PON_DATA, 7);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);    
 
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-    
-    char POFF_DATA[5] = {0xAA,0x00,0x03,0x02,0x00,0x52,0xA9};
+    char POFF_DATA[7] = {170,0,3,2,0,84,167};
+    printf("CMD2\n");
     uart_write_bytes(UART_NUM_1, &POFF_DATA, 7);
+    
+    vTaskDelay(3000 / portTICK_PERIOD_MS);   
+    
+    // Press pair button
+    char P2ON_DATA[7] = {170,0,3,2,0,81,170};
+    printf("CMD3\n");
+    uart_write_bytes(UART_NUM_1, &P2ON_DATA, 7);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);    
+    char P2OFF_DATA[7] = {170,0,3,2,0,82,169};
+    printf("CMD4\n");
+    uart_write_bytes(UART_NUM_1, &P2OFF_DATA, 7);
+    
+    // Release MFB
+    printf("Done\n");
+    util_bm83_sleep();
 
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-    // Enter pairing mode
-    char PAIR_DATA[5] = {0xAA,0x00,0x03,0x02,0x00,0x5D,0x9E};
-    uart_write_bytes(UART_NUM_1, &PAIR_DATA, 7);
-
-    // Setup the BM83
+    // Setup the BM83 complete
     vTaskDelete(NULL);
 }
 
@@ -203,27 +225,6 @@ int sendData(const char* logName, const char* data)
     return txBytes;
 }
 
-void sendACK(const char* logName)
-{
-    // util_bm83_wake();
-    // char* ACK_DATA[6] = {0xAA,0x00,2,0x14,0x33,0xB7}; //CHK = 1 + ~(0x00 + 0x02+ 0x14 +0x033)
-    char FW_Q_DATA[5] = {0xAA,0x00,1,0x08,0xF7};
-    const int txBytes = uart_write_bytes(UART_NUM_1, &FW_Q_DATA, 5);
-    ESP_LOGI(logName, "Wrote %d bytes", txBytes);
-    // util_bm83_sleep();
-}
-
-static void tx_task(void *arg)
-{
-    static const char *TX_TASK_TAG = "TX_TASK";
-    esp_log_level_set(TX_TASK_TAG, ESP_LOG_INFO);
-    while (1) {
-        // sendData(TX_TASK_TAG, "Hello world");
-        sendACK(TX_TASK_TAG);
-        // sendData(TX_TASK_TAG, ACK_DATA, 6);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-    }
-}
 
 static void rx_task(void *arg)
 {
@@ -234,8 +235,8 @@ static void rx_task(void *arg)
         const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
         if (rxBytes > 0) {
             data[rxBytes] = 0;
-            ESP_LOGI(RX_TASK_TAG, "Read %d bytes: '%s'", rxBytes, data);
-            ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
+            ESP_LOGI(RX_TASK_TAG, "Read %d bytes.", rxBytes);
+            // ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
         }
     }
     free(data);
@@ -284,5 +285,27 @@ void app_main(void)
     // i2c_driver_delete(i2c_port);
 
     xTaskCreate(rx_task, "uart_rx_task", 1024*2, NULL, configMAX_PRIORITIES, NULL);
-    // xTaskCreate(tx_task, "uart_tx_task", 1024*2, NULL, configMAX_PRIORITIES-1, NULL);
+
+    
+    vTaskDelay(30000 / portTICK_PERIOD_MS);    
+    // [170, 0, 3, 2, 0, 52, 199]
+    // Press pair button
+    char SKIP_SONG_DATA[7] = {170,0,3,2,0,52,199};
+    printf("Skipping song...\n");
+    uart_write_bytes(UART_NUM_1, &SKIP_SONG_DATA, 7);
+
+    vTaskDelay(3000 / portTICK_PERIOD_MS);    
+    // [170, 0, 3, 2, 0, 52, 199]
+    printf("Skipping song...\n");
+    uart_write_bytes(UART_NUM_1, &SKIP_SONG_DATA, 7);
+
+    vTaskDelay(3000 / portTICK_PERIOD_MS);    
+    // [170, 0, 3, 2, 0, 52, 199]
+    printf("Skipping song...\n");
+    uart_write_bytes(UART_NUM_1, &SKIP_SONG_DATA, 7);
+
+    vTaskDelay(3000 / portTICK_PERIOD_MS);    
+    printf("Toggle play pause...\n");
+    char PLAYPAUSE_SONG_DATA[7] = {170, 0, 3, 4, 0, 7, 242};
+    uart_write_bytes(UART_NUM_1, &PLAYPAUSE_SONG_DATA, 7);
 }
