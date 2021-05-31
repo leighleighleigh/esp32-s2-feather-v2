@@ -31,3 +31,4 @@ typedef enum {
 // 0x24
 // 0x2D
 // 0x32
+// TODO: 0x01 BTM status
