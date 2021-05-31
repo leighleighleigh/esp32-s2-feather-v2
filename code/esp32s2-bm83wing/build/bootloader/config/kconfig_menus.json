@@ -103,6 +103,16 @@
         "children": [],
         "depends_on": null,
         "help": null,
+        "id": "IDF_TARGET_ESP32C3",
+        "name": "IDF_TARGET_ESP32C3",
+        "range": null,
+        "title": null,
+        "type": "bool"
+    },
+    {
+        "children": [],
+        "depends_on": null,
+        "help": null,
         "id": "IDF_FIRMWARE_CHIP_ID",
         "name": "IDF_FIRMWARE_CHIP_ID",
         "range": null,
@@ -183,7 +193,7 @@
                     }
                 ],
                 "depends_on": null,
-                "help": "Select the way the application is built.\n\nBy default, the application is built as a binary file in a format compatible with\nthe ESP32 bootloader. In addition to this application, 2nd stage bootloader is\nalso built. Application and bootloader binaries can be written into flash and\nloaded/executed from there.\n\nAnother option, useful for only very small and limited applications, is to only link\nthe .elf file of the application, such that it can be loaded directly into RAM over\nJTAG. Note that since IRAM and DRAM sizes are very limited, it is not possible to\nbuild any complex application this way. However for kinds of testing and debugging,\nthis option may provide faster iterations, since the application does not need to be\nwritten into flash.\nNote that at the moment, ESP-IDF does not contain all the startup code required to\ninitialize the CPUs and ROM memory (data/bss). Therefore it is necessary to execute\na bit of ROM code prior to executing the application. A gdbinit file may look as follows:\n\n    # Connect to a running instance of OpenOCD\n    target remote :3333\n    # Reset and halt the target\n    mon reset halt\n    # Run to a specific point in ROM code,\n    #  where most of initialization is complete.\n    thb *0x40007901\n    c\n    # Load the application into RAM\n    load\n    # Run till app_main\n    tb app_main\n    c\n\nExecute this gdbinit file as follows:\n\n    xtensa-esp32-elf-gdb build/app-name.elf -x gdbinit\n\nRecommended sdkconfig.defaults for building loadable ELF files is as follows.\nCONFIG_APP_BUILD_TYPE_ELF_RAM is required, other options help reduce application\nmemory footprint.\n\n    CONFIG_APP_BUILD_TYPE_ELF_RAM=y\n    CONFIG_VFS_SUPPORT_TERMIOS=\n    CONFIG_NEWLIB_NANO_FORMAT=y\n    CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y\n    CONFIG_ESP_DEBUG_STUBS_ENABLE=\n    CONFIG_ESP_ERR_TO_NAME_LOOKUP=",
+                "help": "Select the way the application is built.\n\nBy default, the application is built as a binary file in a format compatible with\nthe ESP-IDF bootloader. In addition to this application, 2nd stage bootloader is\nalso built. Application and bootloader binaries can be written into flash and\nloaded/executed from there.\n\nAnother option, useful for only very small and limited applications, is to only link\nthe .elf file of the application, such that it can be loaded directly into RAM over\nJTAG. Note that since IRAM and DRAM sizes are very limited, it is not possible to\nbuild any complex application this way. However for kinds of testing and debugging,\nthis option may provide faster iterations, since the application does not need to be\nwritten into flash.\nNote that at the moment, ESP-IDF does not contain all the startup code required to\ninitialize the CPUs and ROM memory (data/bss). Therefore it is necessary to execute\na bit of ROM code prior to executing the application. A gdbinit file may look as follows (for ESP32):\n\n    # Connect to a running instance of OpenOCD\n    target remote :3333\n    # Reset and halt the target\n    mon reset halt\n    # Run to a specific point in ROM code,\n    #  where most of initialization is complete.\n    thb *0x40007901\n    c\n    # Load the application into RAM\n    load\n    # Run till app_main\n    tb app_main\n    c\n\nExecute this gdbinit file as follows:\n\n    xtensa-esp32-elf-gdb build/app-name.elf -x gdbinit\n\nExample gdbinit files for other targets can be found in tools/test_apps/system/gdb_loadable_elf/\n\nRecommended sdkconfig.defaults for building loadable ELF files is as follows.\nCONFIG_APP_BUILD_TYPE_ELF_RAM is required, other options help reduce application\nmemory footprint.\n\n    CONFIG_APP_BUILD_TYPE_ELF_RAM=y\n    CONFIG_VFS_SUPPORT_TERMIOS=\n    CONFIG_NEWLIB_NANO_FORMAT=y\n    CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y\n    CONFIG_ESP_DEBUG_STUBS_ENABLE=\n    CONFIG_ESP_ERR_TO_NAME_LOOKUP=",
                 "id": "build-type-application-build-type",
                 "name": "APP_BUILD_TYPE",
                 "title": "Application build type",
@@ -656,7 +666,17 @@
             },
             {
                 "children": [],
-                "depends_on": "IDF_TARGET_ESP32S2",
+                "depends_on": "ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3",
+                "help": null,
+                "id": "SECURE_BOOT_SUPPORTS_RSA",
+                "name": "SECURE_BOOT_SUPPORTS_RSA",
+                "range": null,
+                "title": null,
+                "type": "bool"
+            },
+            {
+                "children": [],
+                "depends_on": "IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3",
                 "help": null,
                 "id": "SECURE_TARGET_HAS_SECURE_ROM_DL_MODE",
                 "name": "SECURE_TARGET_HAS_SECURE_ROM_DL_MODE",
@@ -688,7 +708,7 @@
                     },
                     {
                         "children": [],
-                        "depends_on": "(ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2) && SECURE_BOOT_V2_ENABLED && <choice SECURE_SIGNED_APPS_SCHEME>",
+                        "depends_on": "SECURE_BOOT_SUPPORTS_RSA && SECURE_BOOT_V2_ENABLED && <choice SECURE_SIGNED_APPS_SCHEME>",
                         "help": "Appends the RSA-3072 based Signature block to the application.\nRefer to <Secure Boot Version 2 documentation link> before enabling.",
                         "id": "SECURE_SIGNED_APPS_RSA_SCHEME",
                         "name": "SECURE_SIGNED_APPS_RSA_SCHEME",
@@ -740,7 +760,7 @@
                             },
                             {
                                 "children": [],
-                                "depends_on": "(ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2) && <choice SECURE_BOOT_VERSION>",
+                                "depends_on": "SECURE_BOOT_SUPPORTS_RSA && <choice SECURE_BOOT_VERSION>",
                                 "help": "Build a bootloader which enables Secure Boot version 2 on first boot.\nRefer to Secure Boot V2 section of the ESP-IDF Programmer's Guide for this version before enabling.",
                                 "id": "SECURE_BOOT_V2_ENABLED",
                                 "name": "SECURE_BOOT_V2_ENABLED",
@@ -757,7 +777,7 @@
                         "type": "choice"
                     }
                 ],
-                "depends_on": null,
+                "depends_on": "!IDF_TARGET_ESP32C3",
                 "help": "Build a bootloader which enables Secure Boot on first boot.\n\nOnce enabled, Secure Boot will not boot a modified bootloader. The bootloader will only load a partition\ntable or boot an app if the data has a verified digital signature. There are implications for reflashing\nupdated apps once secure boot is enabled.\n\nWhen enabling secure boot, JTAG and ROM BASIC Interpreter are permanently disabled by default.",
                 "id": "SECURE_BOOT",
                 "name": "SECURE_BOOT",
@@ -1602,6 +1622,26 @@
                         "range": null,
                         "title": "Custom partition table CSV",
                         "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "!ESP32_COREDUMP_ENABLE_TO_FLASH && NVS_ENCRYPTION && <choice PARTITION_TABLE_TYPE>",
+                        "help": null,
+                        "id": "PARTITION_TABLE_SINGLE_APP_ENCRYPTED_NVS",
+                        "name": "PARTITION_TABLE_SINGLE_APP_ENCRYPTED_NVS",
+                        "range": null,
+                        "title": "Single factory app, no OTA, encrypted NVS",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "!ESP_COREDUMP_ENABLE_TO_FLASH && NVS_ENCRYPTION && <choice PARTITION_TABLE_TYPE>",
+                        "help": null,
+                        "id": "PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS",
+                        "name": "PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS",
+                        "range": null,
+                        "title": "Factory app, two OTA definitions, encrypted NVS",
+                        "type": "bool"
                     }
                 ],
                 "depends_on": null,
@@ -2029,35 +2069,6 @@
                         "range": null,
                         "title": null,
                         "type": "int"
-                    },
-                    {
-                        "children": [
-                            {
-                                "children": [
-                                    {
-                                        "children": [],
-                                        "depends_on": "ESP32S2_MEMPROT_FEATURE",
-                                        "help": "Once locked, memory protection settings cannot be changed anymore.\nThe lock is reset only on the chip startup.",
-                                        "id": "ESP32S2_MEMPROT_FEATURE_LOCK",
-                                        "name": "ESP32S2_MEMPROT_FEATURE_LOCK",
-                                        "range": null,
-                                        "title": "Lock memory protection settings",
-                                        "type": "bool"
-                                    }
-                                ],
-                                "depends_on": null,
-                                "help": "If enabled, permission control module watches all memory access and fires panic handler\nif permission violation is detected. This feature automatically splits\nmemory into data and instruction segments and sets Read/Execute permissions\nfor instruction part (below splitting address) and Read/Write permissions\nfor data part (above splitting address). The memory protection is effective\non all access through IRAM0 and DRAM0 buses.",
-                                "id": "ESP32S2_MEMPROT_FEATURE",
-                                "name": "ESP32S2_MEMPROT_FEATURE",
-                                "range": null,
-                                "title": "Enable memory protection",
-                                "type": "bool"
-                            }
-                        ],
-                        "depends_on": null,
-                        "id": "component-config-esp32s2-specific-memory-protection",
-                        "title": "Memory protection",
-                        "type": "menu"
                     },
                     {
                         "children": [
@@ -2923,16 +2934,6 @@
                         "range": null,
                         "title": "Use fixed static RAM size",
                         "type": "bool"
-                    },
-                    {
-                        "children": [],
-                        "depends_on": null,
-                        "help": "This config option allows to add RTC fast memory region to system heap with capability\nsimilar to that of DRAM region but without DMA. This memory will be consumed first per\nheap initialization order by early startup services and scheduler related code. Speed\nwise RTC fast memory operates on APB clock and hence does not have much performance impact.",
-                        "id": "ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP",
-                        "name": "ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP",
-                        "range": null,
-                        "title": "Enable RTC fast memory for dynamic allocations",
-                        "type": "bool"
                     }
                 ],
                 "depends_on": null,
@@ -3076,6 +3077,16 @@
                         "type": "bool"
                     },
                     {
+                        "children": [],
+                        "depends_on": null,
+                        "help": null,
+                        "id": "ESP_CONSOLE_MULTIPLE_UART",
+                        "name": "ESP_CONSOLE_MULTIPLE_UART",
+                        "range": null,
+                        "title": null,
+                        "type": "bool"
+                    },
+                    {
                         "children": [
                             {
                                 "children": [],
@@ -3098,7 +3109,7 @@
                                 "type": "bool"
                             }
                         ],
-                        "depends_on": "ESP_CONSOLE_UART_CUSTOM",
+                        "depends_on": "ESP_CONSOLE_UART_CUSTOM && ESP_CONSOLE_MULTIPLE_UART",
                         "help": "This UART peripheral is used for console output from the ESP-IDF Bootloader and the app.\n\nIf the configuration is different in the Bootloader binary compared to the app binary, UART\nis reconfigured after the bootloader exits and the app starts.\n\nDue to an ESP32 ROM bug, UART2 is not supported for console output\nvia esp_rom_printf.",
                         "id": "component-config-common-esp-related-uart-peripheral-to-use-for-console-output-0-1-",
                         "name": "ESP_CONSOLE_UART_NUM",
@@ -3325,11 +3336,178 @@
                         "range": null,
                         "title": null,
                         "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": null,
+                        "id": "ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY",
+                        "name": "ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY",
+                        "range": null,
+                        "title": null,
+                        "type": "bool"
                     }
                 ],
                 "depends_on": null,
                 "id": "component-config-common-esp-related",
                 "title": "Common ESP-related",
+                "type": "menu"
+            },
+            {
+                "children": [
+                    {
+                        "children": [
+                            {
+                                "children": [],
+                                "depends_on": "<choice ESP_SYSTEM_PANIC>",
+                                "help": "Outputs the relevant registers over the serial port and halt the\nprocessor. Needs a manual reset to restart.",
+                                "id": "ESP_SYSTEM_PANIC_PRINT_HALT",
+                                "name": "ESP_SYSTEM_PANIC_PRINT_HALT",
+                                "range": null,
+                                "title": "Print registers and halt",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "<choice ESP_SYSTEM_PANIC>",
+                                "help": "Outputs the relevant registers over the serial port and immediately\nreset the processor.",
+                                "id": "ESP_SYSTEM_PANIC_PRINT_REBOOT",
+                                "name": "ESP_SYSTEM_PANIC_PRINT_REBOOT",
+                                "range": null,
+                                "title": "Print registers and reboot",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "<choice ESP_SYSTEM_PANIC>",
+                                "help": "Just resets the processor without outputting anything",
+                                "id": "ESP_SYSTEM_PANIC_SILENT_REBOOT",
+                                "name": "ESP_SYSTEM_PANIC_SILENT_REBOOT",
+                                "range": null,
+                                "title": "Silent reboot",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "<choice ESP_SYSTEM_PANIC>",
+                                "help": "Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem\nof the crash.",
+                                "id": "ESP_SYSTEM_PANIC_GDBSTUB",
+                                "name": "ESP_SYSTEM_PANIC_GDBSTUB",
+                                "range": null,
+                                "title": "Invoke GDBStub",
+                                "type": "bool"
+                            }
+                        ],
+                        "depends_on": null,
+                        "help": "If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is\ninvoked. Configure the panic handler's action here.",
+                        "id": "component-config-esp-system-settings-panic-handler-behaviour",
+                        "name": "ESP_SYSTEM_PANIC",
+                        "title": "Panic handler behaviour",
+                        "type": "choice"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": "Only initialize and use the main core.",
+                        "id": "ESP_SYSTEM_SINGLE_CORE_MODE",
+                        "name": "ESP_SYSTEM_SINGLE_CORE_MODE",
+                        "range": null,
+                        "title": null,
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": null,
+                        "id": "ESP_SYSTEM_RTC_EXT_XTAL",
+                        "name": "ESP_SYSTEM_RTC_EXT_XTAL",
+                        "range": null,
+                        "title": null,
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "ESP_SYSTEM_RTC_EXT_XTAL",
+                        "help": "To reduce the startup time of an external RTC crystal,\nwe bootstrap it with a 32kHz square wave for a fixed number of cycles.\nSetting 0 will disable bootstrapping (if disabled, the crystal may take\nlonger to start up or fail to oscillate under some conditions).\n\nIf this value is too high, a faulty crystal may initially start and then fail.\nIf this value is too low, an otherwise good crystal may not start.\n\nTo accurately determine if the crystal has started,\nset a larger \"Number of cycles for RTC_SLOW_CLK calibration\" (about 3000).",
+                        "id": "ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES",
+                        "name": "ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES",
+                        "range": null,
+                        "title": "Bootstrap cycles for external 32kHz crystal",
+                        "type": "int"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": null,
+                        "id": "ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK",
+                        "name": "ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK",
+                        "range": null,
+                        "title": null,
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK",
+                        "help": "This config option allows to add RTC fast memory region to system heap with capability\nsimilar to that of DRAM region but without DMA. This memory will be consumed first per\nheap initialization order by early startup services and scheduler related code. Speed\nwise RTC fast memory operates on APB clock and hence does not have much performance impact.",
+                        "id": "ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP",
+                        "name": "ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP",
+                        "range": null,
+                        "title": "Enable RTC fast memory for dynamic allocations",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "!SPIRAM",
+                        "help": "If enabled, chip will try to power down flash at light sleep, which costs more time when chip wakes up.\nOnly can be enabled if there is no SPIRAM configured.",
+                        "id": "ESP_SYSTEM_PD_FLASH",
+                        "name": "ESP_SYSTEM_PD_FLASH",
+                        "range": null,
+                        "title": "PD flash at light sleep when there is no SPIRAM",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "IDF_TARGET_ESP32C3",
+                        "help": "If enabled, the CPU will be powered down in light sleep. Enabling this option will consume\n1.68 KB of internal RAM and will reduce sleep current consumption by about 100 uA.",
+                        "id": "ESP_SYSTEM_PM_POWER_DOWN_CPU",
+                        "name": "ESP_SYSTEM_PM_POWER_DOWN_CPU",
+                        "range": null,
+                        "title": "Power down CPU in light sleep",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "ESP_SYSTEM_MEMPROT_FEATURE",
+                                        "help": "Once locked, memory protection settings cannot be changed anymore.\nThe lock is reset only on the chip startup.",
+                                        "id": "ESP_SYSTEM_MEMPROT_FEATURE_LOCK",
+                                        "name": "ESP_SYSTEM_MEMPROT_FEATURE_LOCK",
+                                        "range": null,
+                                        "title": "Lock memory protection settings",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": "IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S2",
+                                "help": "If enabled, the permission control module watches all the memory access and fires the panic handler\nif a permission violation is detected. This feature automatically splits\nthe SRAM memory into data and instruction segments and sets Read/Execute permissions\nfor the instruction part (below given splitting address) and Read/Write permissions\nfor the data part (above the splitting address). The memory protection is effective\non all access through the IRAM0 and DRAM0 buses.",
+                                "id": "ESP_SYSTEM_MEMPROT_FEATURE",
+                                "name": "ESP_SYSTEM_MEMPROT_FEATURE",
+                                "range": null,
+                                "title": "Enable memory protection",
+                                "type": "bool"
+                            }
+                        ],
+                        "depends_on": null,
+                        "id": "component-config-esp-system-settings-memory-protection",
+                        "title": "Memory protection",
+                        "type": "menu"
+                    }
+                ],
+                "depends_on": null,
+                "id": "component-config-esp-system-settings",
+                "title": "ESP System Settings",
                 "type": "menu"
             },
             {
@@ -3514,6 +3692,16 @@
                         "type": "bool"
                     },
                     {
+                        "children": [],
+                        "depends_on": "IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3",
+                        "help": "Enable this flag to use new SPI flash driver functions from ROM instead of ESP-IDF.\n\nIf keeping this as \"n\" in your project, you will have less free IRAM.\nBut you can use all of our flash features.\n\nIf making this as \"y\" in your project, you will increase free IRAM.\nBut you may miss out on some flash features and support for new flash chips.",
+                        "id": "SPI_FLASH_ROM_IMPL",
+                        "name": "SPI_FLASH_ROM_IMPL",
+                        "range": null,
+                        "title": "Use esp_flash implementation in ROM",
+                        "type": "bool"
+                    },
+                    {
                         "children": [
                             {
                                 "children": [],
@@ -3602,7 +3790,7 @@
                                 "id": "SPI_FLASH_ERASE_YIELD_TICKS",
                                 "name": "SPI_FLASH_ERASE_YIELD_TICKS",
                                 "range": null,
-                                "title": "CPU release time (tick)",
+                                "title": "CPU release time (tick) for an erase operation",
                                 "type": "int"
                             }
                         ],
@@ -3612,6 +3800,16 @@
                         "name": "SPI_FLASH_YIELD_DURING_ERASE",
                         "range": null,
                         "title": "Enables yield operation during flash erase",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "IDF_TARGET_ESP32C3 && !SPI_FLASH_USE_LEGACY_IMPL && !SPI_FLASH_ROM_IMPL",
+                        "help": "This is made default n, because this needs bootloader support.\nThis feature needs special bootloader support.\nIf you want to OTA to a image with this feature\n(e.g. turn on this config option for OTA image), please make\nsure the bootloader has the support for it. (above IDF v4.3)",
+                        "id": "SPI_FLASH_AUTO_SUSPEND",
+                        "name": "SPI_FLASH_AUTO_SUSPEND",
+                        "range": null,
+                        "title": "Auto suspend long erase/write operations",
                         "type": "bool"
                     },
                     {
@@ -3688,12 +3886,32 @@
                                 "range": null,
                                 "title": "Winbond",
                                 "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "!IDF_TARGET_ESP32",
+                                "help": "Enable this to support auto detection of BOYA chips if chip vendor not directly\ngiven by ``chip_drv`` member of the chip struct. This adds support for variant\nchips, however will extend detecting time.",
+                                "id": "SPI_FLASH_SUPPORT_BOYA_CHIP",
+                                "name": "SPI_FLASH_SUPPORT_BOYA_CHIP",
+                                "range": null,
+                                "title": "BOYA",
+                                "type": "bool"
                             }
                         ],
                         "depends_on": null,
                         "id": "component-config-spi-flash-driver-auto-detect-flash-chips",
                         "title": "Auto-detect flash chips",
                         "type": "menu"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": "This option enables flash read/write operations to encrypted partition/s. This option\nis kept enabled irrespective of state of flash encryption feature. However, in case\napplication is not using flash encryption feature and is in need of some additional\nmemory from IRAM region (~1KB) then this config can be disabled.",
+                        "id": "SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE",
+                        "name": "SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE",
+                        "range": null,
+                        "title": "Enable encrypted partition read/write operations",
+                        "type": "bool"
                     }
                 ],
                 "depends_on": null,

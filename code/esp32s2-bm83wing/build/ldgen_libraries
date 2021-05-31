@@ -7,6 +7,7 @@
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/spi_flash/libspi_flash.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/nvs_flash/libnvs_flash.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/pthread/libpthread.a
+/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/esp_gdbstub/libesp_gdbstub.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/esp_system/libesp_system.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/esp_rom/libesp_rom.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/hal/libhal.a
@@ -42,7 +43,6 @@
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/nghttp/libnghttp.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/esp-tls/libesp-tls.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/esp_adc_cal/libesp_adc_cal.a
-/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/esp_gdbstub/libesp_gdbstub.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/esp_hid/libesp_hid.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/tcp_transport/libtcp_transport.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/esp_http_client/libesp_http_client.a
@@ -66,6 +66,7 @@
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/openssl/libopenssl.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/perfmon/libperfmon.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/spiffs/libspiffs.a
+/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/touch_element/libtouch_element.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/ulp/libulp.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
 /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/cmd_nvs/libcmd_nvs.a

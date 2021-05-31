@@ -31,6 +31,7 @@
 #include "sdkconfig.h"
 
 #include "bm83-uart-ctrl.h"
+#include "bm83-event-ids.h"
 
 static const char *TAG = "main";
 
@@ -47,6 +48,29 @@ void init_usb_cdc(void)
 }
 
 
+static void util_print_unknown_bm83_event(void *event_data)
+{
+    uint8_t *buffer = event_data;
+
+    // Check start byte
+    if(buffer[0] != 0xAA)
+    {
+        return;
+    }
+    
+    int16_t dlc = buffer[1] << 8 | buffer[2];
+    
+    printf("Unknown bytes [");
+    for(int i = 0; i<dlc+2; i++)
+    {
+        printf("0x%X",buffer[i]);
+        if(i != dlc+1){
+            printf(",");
+        }
+    }
+    printf("]\n");
+}
+
 /**
  * @brief GPS Event Handler
  *
@@ -58,9 +82,19 @@ void init_usb_cdc(void)
 static void bm83_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     bm83_state_t *bm83_state = NULL;
-    printf("event handler...\n");
-    return;
+    cmd_ack_t *ack_msg = NULL;
 
+    switch(event_id){
+        case CMD_ACK:
+            ack_msg = (cmd_ack_t *)event_data;
+            ESP_LOGI(TAG,"GOT ACK, CMD=0x%X, STAT=0x%X",ack_msg->command_id,ack_msg->status);
+            break;
+
+        case CMD_UNKNOWN:
+            ESP_LOGW(TAG, "Unknown command.");
+            util_print_unknown_bm83_event(event_data);
+            break;
+    }
     
     // switch (event_id) {
     //     case GPS_UPDATE:

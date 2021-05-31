@@ -9,6 +9,7 @@ extern "C" {
 #include "esp_err.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
+#include "bm83-event-ids.h"
 
 /**
  * @brief Declare of BM83 Parser Event base

@@ -5,6 +5,7 @@
 #include "esp_log.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
+#include "string.h"
 #include "bm83-uart-ctrl.h"
 
 static const char *BM83_TAG = "bm83_parser";
@@ -23,13 +24,6 @@ ESP_EVENT_DEFINE_BASE(ESP_BM83_EVENT);
  *
  */
 typedef struct {
-    /* Variables used for parsing */
-    uint8_t start; // Start byte. Should be 0xAA.                                                
-    uint16_t dlc; // DLC. Combination of both bytes (DLC_HI and DLC_LOW)        
-    uint8_t *data; // Data buffer, contains opcode and arguments. DLC represents length.
-    uint8_t crc; // CRC value
-    bool valid; // Set true if CRC is valid! 
-
     /* Variables used to hold reference to objects */
     bm83_state_t parent;                                  /*!< Parent class */
     uart_port_t uart_port;                         /*!< Uart port number */
@@ -180,6 +174,146 @@ esp_err_t bm83_parser_deinit(bm83_parser_handle_t bm83_hdl)
 }
 
 /**
+ * @brief Parse BM83 message, publish events based on OPCODE.
+ *
+ * @param bm83_runtime_t bm83_runtime_t type object
+ * @param len number of bytes to decode
+ * @return esp_err_t ESP_OK on success, ESP_FAIL on error
+ */
+static esp_err_t bm83_parse(bm83_runtime_t *bm83_hdl, size_t len)
+{
+    // Get opcode
+    uint8_t opCode = bm83_hdl->buffer[3];
+
+    cmd_ack_t *ack_msg = calloc(1,sizeof(cmd_ack_t));
+
+    switch(opCode)
+    {
+        case 0x0:
+            // ack_msg = (cmd_ack_t)
+            ack_msg->command_id = bm83_hdl->buffer[4];
+            ack_msg->status = bm83_hdl->buffer[5];
+            esp_event_post_to(bm83_hdl->event_loop_hdl, ESP_BM83_EVENT, CMD_ACK, ack_msg, sizeof(cmd_ack_t), 100 / portTICK_PERIOD_MS);
+            return ESP_OK;
+        default:
+            return ESP_FAIL;
+    }
+}
+
+/**
+ * @brief Parse BM83 message
+ *
+ * @param bm83_runtime_t esp_gps_t type object
+ * @param len number of bytes to decode
+ * @return esp_err_t ESP_OK on success, ESP_FAIL on error
+ */
+static esp_err_t bm83_decode(bm83_runtime_t *bm83_hdl, size_t len)
+{
+    // Decode the message data, and signal events on the event loop.
+    
+    // First check the START byte exists.
+    // Then check CHECKSUM > OK/ERR
+    // Then perform operations based on data contents.
+
+    // Enforce start byte
+    if(bm83_hdl->buffer[0] != 0xAA){
+        return ESP_FAIL;
+    }
+
+    // Calculate checksum
+    uint8_t checksum = 0;
+    for(int c = 1; c<len-1; c++){
+        checksum += bm83_hdl->buffer[c]; // Add bytes
+    }
+    checksum = 1 + (0xFF - checksum); // Perform checksum calc
+    
+    // Compare
+    if(bm83_hdl->buffer[len-1] != checksum)
+    {
+        ESP_LOGW(BM83_TAG,"Checksum fail. %X vs %X", checksum, bm83_hdl->buffer[len-1]);
+        return ESP_FAIL;
+    }
+
+
+    // Here we do parseing logic
+    esp_err_t parse_result = bm83_parse(bm83_hdl,len);
+
+    /* Send signal to notify that one unknown statement has been met */
+    if(parse_result == ESP_FAIL)
+    {
+        esp_event_post_to(bm83_hdl->event_loop_hdl, ESP_BM83_EVENT, CMD_UNKNOWN, bm83_hdl->buffer, len, 100 / portTICK_PERIOD_MS);
+    }
+
+    return ESP_OK;
+}
+
+/**
+ * @brief Handle when a pattern has been detected by uart. This sets up for parsing the string at the pattern position.
+ *
+ * @param bm83_hdl bm83_hdl_t type object
+ */
+static void esp_handle_uart_pattern(bm83_runtime_t *bm83_hdl)
+{
+    // GET the position in the internal UART buffer where the pattern is
+    // int pattern_pos = uart_pattern_pop_pos(bm83_hdl->uart_port);
+    int pattern_pos = uart_pattern_get_pos(bm83_hdl->uart_port);
+
+    if (pattern_pos != -1) {
+        // From this position, decode the DLC (pattern_pos + 3)
+        int read_len = uart_read_bytes(bm83_hdl->uart_port, bm83_hdl->buffer, pattern_pos + 3, 500 / portTICK_PERIOD_MS);
+        // We now have a DLC at pattern_pos+1, and pattern_pos+2
+        uint16_t dlc = bm83_hdl->buffer[pattern_pos+1] << 8 | bm83_hdl->buffer[pattern_pos+2];
+        uint16_t total_len = dlc+4; // Represents calculated total data length for a BM83 uart message (start byte + DLC + data + CRC)
+
+        // Wait for the remainder of the bytes to arrive
+        int read_data_len = uart_read_bytes(bm83_hdl->uart_port, bm83_hdl->buffer, dlc + 1, 500 / portTICK_PERIOD_MS);
+        
+        // Re-write the buffer with combination of the other bytes
+        uint8_t tempBuf[total_len];
+        tempBuf[0] = (uint8_t)0xAA;
+        tempBuf[1] = (uint8_t)(dlc>>8);
+        tempBuf[2] = (uint8_t)(dlc & 0xFF);
+        
+        for(int i = 0; i<dlc+1; i++)
+        {
+            tempBuf[3+i] = (uint8_t)(bm83_hdl->buffer[i]);
+        }
+        
+        // Copy result back into buffer
+        memcpy(bm83_hdl->buffer,&tempBuf,total_len);
+
+        /* make sure the line is a standard string */
+        bm83_hdl->buffer[total_len] = '\0';
+
+        ESP_LOGD(BM83_TAG, "Read UART message length %d into runtime buffer.", total_len);
+
+        // printf("bytes [");
+        // for(int i = 0; i<total_len; i++)
+        // {
+        //     printf("%X",bm83_hdl->buffer[i]);
+        //     if(i != total_len-1)
+        //     {
+        //         printf(",");
+        //     }
+        // }
+        // printf("]\n");
+
+        // Now we can POP the pattern position, as we are done with it
+        uart_pattern_pop_pos(bm83_hdl->uart_port);
+
+        /* Send new data to handle */
+        if (bm83_decode(bm83_hdl, total_len+1) != ESP_OK) {
+            ESP_LOGW(BM83_TAG, "BM83 decode failed");
+        }
+
+    } else {
+        // We have potentially overflowed our pattern queue here. Flush and restart.
+        ESP_LOGW(BM83_TAG, "Pattern Queue Size too small");
+        uart_flush_input(bm83_hdl->uart_port);
+    }
+}
+
+/**
  * @brief BM83 Parser Task Entry
  * @brief Handles UART events
  * @param arg runtime object of bm83 parser
@@ -214,9 +348,9 @@ void bm83_parser_task_entry(void *arg)
                 ESP_LOGE(BM83_TAG, "Frame Error");
                 break;
             case UART_PATTERN_DET:
-                ESP_LOGI(BM83_TAG, "HANDLING UART PATTERN");   
+                ESP_LOGD(BM83_TAG, "uart_pattern_det event, handling...");   
                 // Pattern handling code goes here
-                // esp_handle_uart_pattern(bm83_runtime);
+                esp_handle_uart_pattern(bm83_runtime);
                 break;
             default:
                 ESP_LOGW(BM83_TAG, "unknown uart event type: %d", event.type);

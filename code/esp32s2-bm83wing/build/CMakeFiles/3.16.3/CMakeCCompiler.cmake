@@ -17,7 +17,6 @@ set(CMAKE_C_SIMULATE_VERSION "")
 
 
 
-
 set(CMAKE_AR "/home/leigh/.espressif/tools/xtensa-esp32s2-elf/esp-2020r3-8.4.0/xtensa-esp32s2-elf/bin/xtensa-esp32s2-elf-ar")
 set(CMAKE_C_COMPILER_AR "/home/leigh/.espressif/tools/xtensa-esp32s2-elf/esp-2020r3-8.4.0/xtensa-esp32s2-elf/bin/xtensa-esp32s2-elf-gcc-ar")
 set(CMAKE_RANLIB "/home/leigh/.espressif/tools/xtensa-esp32s2-elf/esp-2020r3-8.4.0/xtensa-esp32s2-elf/bin/xtensa-esp32s2-elf-ranlib")

@@ -103,6 +103,16 @@
         "children": [],
         "depends_on": null,
         "help": null,
+        "id": "IDF_TARGET_ESP32C3",
+        "name": "IDF_TARGET_ESP32C3",
+        "range": null,
+        "title": null,
+        "type": "bool"
+    },
+    {
+        "children": [],
+        "depends_on": null,
+        "help": null,
         "id": "IDF_FIRMWARE_CHIP_ID",
         "name": "IDF_FIRMWARE_CHIP_ID",
         "range": null,
@@ -183,7 +193,7 @@
                     }
                 ],
                 "depends_on": null,
-                "help": "Select the way the application is built.\n\nBy default, the application is built as a binary file in a format compatible with\nthe ESP32 bootloader. In addition to this application, 2nd stage bootloader is\nalso built. Application and bootloader binaries can be written into flash and\nloaded/executed from there.\n\nAnother option, useful for only very small and limited applications, is to only link\nthe .elf file of the application, such that it can be loaded directly into RAM over\nJTAG. Note that since IRAM and DRAM sizes are very limited, it is not possible to\nbuild any complex application this way. However for kinds of testing and debugging,\nthis option may provide faster iterations, since the application does not need to be\nwritten into flash.\nNote that at the moment, ESP-IDF does not contain all the startup code required to\ninitialize the CPUs and ROM memory (data/bss). Therefore it is necessary to execute\na bit of ROM code prior to executing the application. A gdbinit file may look as follows:\n\n    # Connect to a running instance of OpenOCD\n    target remote :3333\n    # Reset and halt the target\n    mon reset halt\n    # Run to a specific point in ROM code,\n    #  where most of initialization is complete.\n    thb *0x40007901\n    c\n    # Load the application into RAM\n    load\n    # Run till app_main\n    tb app_main\n    c\n\nExecute this gdbinit file as follows:\n\n    xtensa-esp32-elf-gdb build/app-name.elf -x gdbinit\n\nRecommended sdkconfig.defaults for building loadable ELF files is as follows.\nCONFIG_APP_BUILD_TYPE_ELF_RAM is required, other options help reduce application\nmemory footprint.\n\n    CONFIG_APP_BUILD_TYPE_ELF_RAM=y\n    CONFIG_VFS_SUPPORT_TERMIOS=\n    CONFIG_NEWLIB_NANO_FORMAT=y\n    CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y\n    CONFIG_ESP_DEBUG_STUBS_ENABLE=\n    CONFIG_ESP_ERR_TO_NAME_LOOKUP=",
+                "help": "Select the way the application is built.\n\nBy default, the application is built as a binary file in a format compatible with\nthe ESP-IDF bootloader. In addition to this application, 2nd stage bootloader is\nalso built. Application and bootloader binaries can be written into flash and\nloaded/executed from there.\n\nAnother option, useful for only very small and limited applications, is to only link\nthe .elf file of the application, such that it can be loaded directly into RAM over\nJTAG. Note that since IRAM and DRAM sizes are very limited, it is not possible to\nbuild any complex application this way. However for kinds of testing and debugging,\nthis option may provide faster iterations, since the application does not need to be\nwritten into flash.\nNote that at the moment, ESP-IDF does not contain all the startup code required to\ninitialize the CPUs and ROM memory (data/bss). Therefore it is necessary to execute\na bit of ROM code prior to executing the application. A gdbinit file may look as follows (for ESP32):\n\n    # Connect to a running instance of OpenOCD\n    target remote :3333\n    # Reset and halt the target\n    mon reset halt\n    # Run to a specific point in ROM code,\n    #  where most of initialization is complete.\n    thb *0x40007901\n    c\n    # Load the application into RAM\n    load\n    # Run till app_main\n    tb app_main\n    c\n\nExecute this gdbinit file as follows:\n\n    xtensa-esp32-elf-gdb build/app-name.elf -x gdbinit\n\nExample gdbinit files for other targets can be found in tools/test_apps/system/gdb_loadable_elf/\n\nRecommended sdkconfig.defaults for building loadable ELF files is as follows.\nCONFIG_APP_BUILD_TYPE_ELF_RAM is required, other options help reduce application\nmemory footprint.\n\n    CONFIG_APP_BUILD_TYPE_ELF_RAM=y\n    CONFIG_VFS_SUPPORT_TERMIOS=\n    CONFIG_NEWLIB_NANO_FORMAT=y\n    CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y\n    CONFIG_ESP_DEBUG_STUBS_ENABLE=\n    CONFIG_ESP_ERR_TO_NAME_LOOKUP=",
                 "id": "build-type-application-build-type",
                 "name": "APP_BUILD_TYPE",
                 "title": "Application build type",
@@ -728,7 +738,17 @@
             },
             {
                 "children": [],
-                "depends_on": "IDF_TARGET_ESP32S2",
+                "depends_on": "ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3",
+                "help": null,
+                "id": "SECURE_BOOT_SUPPORTS_RSA",
+                "name": "SECURE_BOOT_SUPPORTS_RSA",
+                "range": null,
+                "title": null,
+                "type": "bool"
+            },
+            {
+                "children": [],
+                "depends_on": "IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3",
                 "help": null,
                 "id": "SECURE_TARGET_HAS_SECURE_ROM_DL_MODE",
                 "name": "SECURE_TARGET_HAS_SECURE_ROM_DL_MODE",
@@ -760,7 +780,7 @@
                     },
                     {
                         "children": [],
-                        "depends_on": "(ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2) && SECURE_BOOT_V2_ENABLED && <choice SECURE_SIGNED_APPS_SCHEME>",
+                        "depends_on": "SECURE_BOOT_SUPPORTS_RSA && SECURE_BOOT_V2_ENABLED && <choice SECURE_SIGNED_APPS_SCHEME>",
                         "help": "Appends the RSA-3072 based Signature block to the application.\nRefer to <Secure Boot Version 2 documentation link> before enabling.",
                         "id": "SECURE_SIGNED_APPS_RSA_SCHEME",
                         "name": "SECURE_SIGNED_APPS_RSA_SCHEME",
@@ -812,7 +832,7 @@
                             },
                             {
                                 "children": [],
-                                "depends_on": "(ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2) && <choice SECURE_BOOT_VERSION>",
+                                "depends_on": "SECURE_BOOT_SUPPORTS_RSA && <choice SECURE_BOOT_VERSION>",
                                 "help": "Build a bootloader which enables Secure Boot version 2 on first boot.\nRefer to Secure Boot V2 section of the ESP-IDF Programmer's Guide for this version before enabling.",
                                 "id": "SECURE_BOOT_V2_ENABLED",
                                 "name": "SECURE_BOOT_V2_ENABLED",
@@ -829,7 +849,7 @@
                         "type": "choice"
                     }
                 ],
-                "depends_on": null,
+                "depends_on": "!IDF_TARGET_ESP32C3",
                 "help": "Build a bootloader which enables Secure Boot on first boot.\n\nOnce enabled, Secure Boot will not boot a modified bootloader. The bootloader will only load a partition\ntable or boot an app if the data has a verified digital signature. There are implications for reflashing\nupdated apps once secure boot is enabled.\n\nWhen enabling secure boot, JTAG and ROM BASIC Interpreter are permanently disabled by default.",
                 "id": "SECURE_BOOT",
                 "name": "SECURE_BOOT",
@@ -1674,6 +1694,26 @@
                         "range": null,
                         "title": "Custom partition table CSV",
                         "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "!ESP32_COREDUMP_ENABLE_TO_FLASH && NVS_ENCRYPTION && <choice PARTITION_TABLE_TYPE>",
+                        "help": null,
+                        "id": "PARTITION_TABLE_SINGLE_APP_ENCRYPTED_NVS",
+                        "name": "PARTITION_TABLE_SINGLE_APP_ENCRYPTED_NVS",
+                        "range": null,
+                        "title": "Single factory app, no OTA, encrypted NVS",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "!ESP_COREDUMP_ENABLE_TO_FLASH && NVS_ENCRYPTION && <choice PARTITION_TABLE_TYPE>",
+                        "help": null,
+                        "id": "PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS",
+                        "name": "PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS",
+                        "range": null,
+                        "title": "Factory app, two OTA definitions, encrypted NVS",
+                        "type": "bool"
                     }
                 ],
                 "depends_on": null,
@@ -2405,8 +2445,49 @@
             {
                 "children": [
                     {
-                        "children": [],
-                        "depends_on": "IDF_TARGET_ESP32",
+                        "children": [
+                            {
+                                "children": [],
+                                "depends_on": "BT_ENABLED && IDF_TARGET_ESP32",
+                                "help": null,
+                                "id": "BT_CTRL_ESP32",
+                                "name": "BT_CTRL_ESP32",
+                                "range": null,
+                                "title": null,
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "BT_ENABLED && IDF_TARGET_ESP32C3",
+                                "help": null,
+                                "id": "BT_CTRL_ESP32C3",
+                                "name": "BT_CTRL_ESP32C3",
+                                "range": null,
+                                "title": null,
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "BT_ENABLED && IDF_TARGET_ESP32S3",
+                                "help": null,
+                                "id": "BT_CTRL_ESP32S3",
+                                "name": "BT_CTRL_ESP32S3",
+                                "range": null,
+                                "title": null,
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "BT_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)",
+                                "help": null,
+                                "id": "BT_SOC_SUPPORT_5_0",
+                                "name": "BT_SOC_SUPPORT_5_0",
+                                "range": null,
+                                "title": null,
+                                "type": "bool"
+                            }
+                        ],
+                        "depends_on": "IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3",
                         "help": "Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.",
                         "id": "BT_ENABLED",
                         "name": "BT_ENABLED",
@@ -2449,9 +2530,9 @@
                                         "type": "bool"
                                     }
                                 ],
-                                "depends_on": "BT_ENABLED",
+                                "depends_on": "BT_CTRL_ESP32",
                                 "help": "Specify the bluetooth controller mode (BR/EDR, BLE or dual mode).",
-                                "id": "component-config-bluetooth-bluetooth-controller-bluetooth-controller-mode-br-edr-ble-dualmode-",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--bluetooth-controller-mode-br-edr-ble-dualmode-",
                                 "name": "BTDM_CTRL_MODE",
                                 "title": "Bluetooth controller mode (BR/EDR/BLE/DUALMODE)",
                                 "type": "choice"
@@ -2511,7 +2592,7 @@
                                 ],
                                 "depends_on": "BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM",
                                 "help": "SCO data path, i.e. HCI or PCM.\nSCO data can be sent/received through HCI synchronous packets, or the data\ncan be routed to on-chip PCM module on ESP32. PCM input/output signals can\nbe \"matrixed\" to GPIOs. The default data path can also be set using API\n\"esp_bredr_sco_datapath_set\"",
-                                "id": "component-config-bluetooth-bluetooth-controller-br-edr-sync-sco-esco-default-data-path",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--br-edr-sync-sco-esco-default-data-path",
                                 "name": "BTDM_CTRL_BR_EDR_SCO_DATA_PATH",
                                 "title": "BR/EDR Sync(SCO/eSCO) default data path",
                                 "type": "choice"
@@ -2553,7 +2634,7 @@
                                         ],
                                         "depends_on": "BTDM_CTRL_PCM_ROLE_EDGE_CONFIG",
                                         "help": "PCM role can be configured as PCM master or PCM slave",
-                                        "id": "component-config-bluetooth-bluetooth-controller-pcm-signal-config-role-and-polar--pcm-role",
+                                        "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--pcm-signal-config-role-and-polar--pcm-role",
                                         "name": "BTDM_CTRL_PCM_ROLE",
                                         "title": "PCM Role",
                                         "type": "choice"
@@ -2583,7 +2664,7 @@
                                         ],
                                         "depends_on": "BTDM_CTRL_PCM_ROLE_EDGE_CONFIG",
                                         "help": "PCM polarity can be configured as Falling Edge or Rising Edge",
-                                        "id": "component-config-bluetooth-bluetooth-controller-pcm-signal-config-role-and-polar--pcm-polar",
+                                        "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--pcm-signal-config-role-and-polar--pcm-polar",
                                         "name": "BTDM_CTRL_PCM_POLAR",
                                         "title": "PCM Polar",
                                         "type": "choice"
@@ -2711,9 +2792,9 @@
                                         "type": "bool"
                                     }
                                 ],
-                                "depends_on": "BT_ENABLED && !FREERTOS_UNICORE",
+                                "depends_on": "BT_CTRL_ESP32 && !FREERTOS_UNICORE",
                                 "help": "Specify the cpu core to run bluetooth controller.\nCan not specify no-affinity.",
-                                "id": "component-config-bluetooth-bluetooth-controller-the-cpu-core-which-bluetooth-controller-run",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--the-cpu-core-which-bluetooth-controller-run",
                                 "name": "BTDM_CTRL_PINNED_TO_CORE_CHOICE",
                                 "title": "The cpu core which bluetooth controller run",
                                 "type": "choice"
@@ -2751,9 +2832,9 @@
                                         "type": "bool"
                                     }
                                 ],
-                                "depends_on": "BT_ENABLED",
+                                "depends_on": "BT_CTRL_ESP32",
                                 "help": "Speicify HCI mode as VHCI or UART(H4)",
-                                "id": "component-config-bluetooth-bluetooth-controller-hci-mode",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--hci-mode",
                                 "name": "BTDM_CTRL_HCI_MODE_CHOICE",
                                 "title": "HCI mode",
                                 "type": "choice"
@@ -2764,8 +2845,8 @@
                                         "children": [],
                                         "depends_on": "BTDM_CTRL_HCI_MODE_UART_H4",
                                         "help": "Uart number for HCI. The available uart is UART1 and UART2.",
-                                        "id": "BT_HCI_UART_NO",
-                                        "name": "BT_HCI_UART_NO",
+                                        "id": "BTDM_CTRL_HCI_UART_NO",
+                                        "name": "BTDM_CTRL_HCI_UART_NO",
                                         "range": null,
                                         "title": "UART Number for HCI",
                                         "type": "int"
@@ -2774,15 +2855,15 @@
                                         "children": [],
                                         "depends_on": "BTDM_CTRL_HCI_MODE_UART_H4",
                                         "help": "UART Baudrate for HCI. Please use standard baudrate.",
-                                        "id": "BT_HCI_UART_BAUDRATE",
-                                        "name": "BT_HCI_UART_BAUDRATE",
+                                        "id": "BTDM_CTRL_HCI_UART_BAUDRATE",
+                                        "name": "BTDM_CTRL_HCI_UART_BAUDRATE",
                                         "range": null,
                                         "title": "UART Baudrate for HCI",
                                         "type": "int"
                                     }
                                 ],
                                 "depends_on": null,
-                                "id": "component-config-bluetooth-bluetooth-controller-hci-uart-h4-options",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--hci-uart-h4-options",
                                 "title": "HCI UART(H4) Options",
                                 "type": "menu"
                             },
@@ -2794,37 +2875,37 @@
                                                 "children": [
                                                     {
                                                         "children": [],
-                                                        "depends_on": "<choice BTDM_MODEM_SLEEP_MODE>",
+                                                        "depends_on": "<choice BTDM_CTRL_MODEM_SLEEP_MODE>",
                                                         "help": "ORIG mode is a bluetooth sleep mode that can be used for dual mode controller. In this mode,\nbluetooth controller sleeps between BR/EDR frames and BLE events. A low power clock is used to\nmaintain bluetooth reference clock.",
-                                                        "id": "BTDM_MODEM_SLEEP_MODE_ORIG",
-                                                        "name": "BTDM_MODEM_SLEEP_MODE_ORIG",
+                                                        "id": "BTDM_CTRL_MODEM_SLEEP_MODE_ORIG",
+                                                        "name": "BTDM_CTRL_MODEM_SLEEP_MODE_ORIG",
                                                         "range": null,
                                                         "title": "ORIG Mode(sleep with low power clock)",
                                                         "type": "bool"
                                                     },
                                                     {
                                                         "children": [],
-                                                        "depends_on": "<choice BTDM_MODEM_SLEEP_MODE>",
+                                                        "depends_on": "<choice BTDM_CTRL_MODEM_SLEEP_MODE>",
                                                         "help": "EVED mode is for BLE only and is only for internal test. Do not use it for production. this\nmode is not compatible with DFS nor light sleep",
-                                                        "id": "BTDM_MODEM_SLEEP_MODE_EVED",
-                                                        "name": "BTDM_MODEM_SLEEP_MODE_EVED",
+                                                        "id": "BTDM_CTRL_MODEM_SLEEP_MODE_EVED",
+                                                        "name": "BTDM_CTRL_MODEM_SLEEP_MODE_EVED",
                                                         "range": null,
                                                         "title": "EVED Mode(For internal test only)",
                                                         "type": "bool"
                                                     }
                                                 ],
-                                                "depends_on": "BTDM_MODEM_SLEEP",
+                                                "depends_on": "BTDM_CTRL_MODEM_SLEEP",
                                                 "help": "To select which strategy to use for modem sleep",
-                                                "id": "component-config-bluetooth-bluetooth-controller-modem-sleep-options-bluetooth-modem-sleep-bluetooth-modem-sleep-mode",
-                                                "name": "BTDM_MODEM_SLEEP_MODE",
+                                                "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--modem-sleep-options-bluetooth-modem-sleep-bluetooth-modem-sleep-mode",
+                                                "name": "BTDM_CTRL_MODEM_SLEEP_MODE",
                                                 "title": "Bluetooth Modem sleep mode",
                                                 "type": "choice"
                                             }
                                         ],
-                                        "depends_on": "BT_ENABLED",
+                                        "depends_on": "BT_CTRL_ESP32",
                                         "help": "Enable/disable bluetooth controller low power mode.",
-                                        "id": "BTDM_MODEM_SLEEP",
-                                        "name": "BTDM_MODEM_SLEEP",
+                                        "id": "BTDM_CTRL_MODEM_SLEEP",
+                                        "name": "BTDM_CTRL_MODEM_SLEEP",
                                         "range": null,
                                         "title": "Bluetooth modem sleep",
                                         "type": "bool"
@@ -2833,35 +2914,35 @@
                                         "children": [
                                             {
                                                 "children": [],
-                                                "depends_on": "<choice BTDM_LOW_POWER_CLOCK>",
+                                                "depends_on": "<choice BTDM_CTRL_LOW_POWER_CLOCK>",
                                                 "help": "Main crystal can be used as low power clock for bluetooth modem sleep. If this option is\nselected, bluetooth modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, but\ncannot work when light sleep is enabled. Main crystal has a good performance in accuracy as\nthe bluetooth low power clock source.",
-                                                "id": "BTDM_LPCLK_SEL_MAIN_XTAL",
-                                                "name": "BTDM_LPCLK_SEL_MAIN_XTAL",
+                                                "id": "BTDM_CTRL_LPCLK_SEL_MAIN_XTAL",
+                                                "name": "BTDM_CTRL_LPCLK_SEL_MAIN_XTAL",
                                                 "range": null,
                                                 "title": "Main crystal",
                                                 "type": "bool"
                                             },
                                             {
                                                 "children": [],
-                                                "depends_on": "ESP32_RTC_CLK_SRC_EXT_CRYS && <choice BTDM_LOW_POWER_CLOCK>",
+                                                "depends_on": "ESP32_RTC_CLK_SRC_EXT_CRYS && <choice BTDM_CTRL_LOW_POWER_CLOCK>",
                                                 "help": "External 32kHz crystal has a nominal frequency of 32.768kHz and provides good frequency\nstability. If used as Bluetooth low power clock, External 32kHz can support Bluetooth\nmodem sleep to be used with both DFS and light sleep.",
-                                                "id": "BTDM_LPCLK_SEL_EXT_32K_XTAL",
-                                                "name": "BTDM_LPCLK_SEL_EXT_32K_XTAL",
+                                                "id": "BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL",
+                                                "name": "BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL",
                                                 "range": null,
                                                 "title": "External 32kHz crystal",
                                                 "type": "bool"
                                             }
                                         ],
-                                        "depends_on": "BTDM_MODEM_SLEEP_MODE_ORIG",
+                                        "depends_on": "BTDM_CTRL_MODEM_SLEEP_MODE_ORIG",
                                         "help": "Select the low power clock source for bluetooth controller. Bluetooth low power clock is\nthe clock source to maintain time in sleep mode.\n\n- \"Main crystal\" option provides good accuracy and can support Dynamic Frequency Scaling\n  to be used with Bluetooth modem sleep. Light sleep is not supported.\n- \"External 32kHz crystal\" option allows user to use a 32.768kHz crystal as Bluetooth low\n  power clock. This option is allowed as long as External 32kHz crystal is configured as\n  the system RTC clock source. This option provides good accuracy and supports Bluetooth\n  modem sleep to be used alongside Dynamic Frequency Scaling or light sleep.",
-                                        "id": "component-config-bluetooth-bluetooth-controller-modem-sleep-options-bluetooth-low-power-clock",
-                                        "name": "BTDM_LOW_POWER_CLOCK",
+                                        "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--modem-sleep-options-bluetooth-low-power-clock",
+                                        "name": "BTDM_CTRL_LOW_POWER_CLOCK",
                                         "title": "Bluetooth low power clock",
                                         "type": "choice"
                                     }
                                 ],
                                 "depends_on": null,
-                                "id": "component-config-bluetooth-bluetooth-controller-modem-sleep-options",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--modem-sleep-options",
                                 "title": "MODEM SLEEP Options",
                                 "type": "menu"
                             },
@@ -2869,7 +2950,7 @@
                                 "children": [
                                     {
                                         "children": [],
-                                        "depends_on": "BTDM_LPCLK_SEL_EXT_32K_XTAL && BTDM_CTRL_MODE_BLE_ONLY && <choice BTDM_BLE_SLEEP_CLOCK_ACCURACY>",
+                                        "depends_on": "BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL && BTDM_CTRL_MODE_BLE_ONLY && <choice BTDM_BLE_SLEEP_CLOCK_ACCURACY>",
                                         "help": null,
                                         "id": "BTDM_BLE_DEFAULT_SCA_500PPM",
                                         "name": "BTDM_BLE_DEFAULT_SCA_500PPM",
@@ -2890,7 +2971,7 @@
                                 ],
                                 "depends_on": "BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM",
                                 "help": "BLE Sleep Clock Accuracy(SCA) for the local device is used to estimate window widening in BLE\nconnection events. With a lower level of clock accuracy(e.g. 500ppm over 250ppm), the slave\nneeds a larger RX window to synchronize with master in each anchor point, thus resulting in an\nincrease of power consumption but a higher level of robustness in keeping connected. According\nto the requirements of Bluetooth Core specification 4.2, the worst-case accuracy of Classic\nBluetooth low power oscialltor(LPO) is +/-250ppm in STANDBY and in low power modes such as\nsniff. For BLE the worst-case SCA is +/-500ppm.\n\n- \"151ppm to 250ppm\" option is the default value for Bluetooth Dual mode\n- \"251ppm to 500ppm\" option can be used in BLE only mode when using external 32kHz crystal as\n   low power clock. This option is provided in case that BLE sleep clock has a lower level of\n   accuracy, or other error sources contribute to the inaccurate timing during sleep.",
-                                "id": "component-config-bluetooth-bluetooth-controller-ble-sleep-clock-accuracy",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--ble-sleep-clock-accuracy",
                                 "name": "BTDM_BLE_SLEEP_CLOCK_ACCURACY",
                                 "title": "BLE Sleep Clock Accuracy",
                                 "type": "choice"
@@ -2942,7 +3023,7 @@
                                         ],
                                         "depends_on": "BTDM_BLE_SCAN_DUPL",
                                         "help": "Scan duplicate have three ways. one is \"Scan Duplicate By Device Address\", This way is to use\nadvertiser address filtering. The adv packet of the same address is only allowed to be reported once.\nAnother way is \"Scan Duplicate By Device Address And Advertising Data\". This way is to use advertising\ndata and device address filtering. All different adv packets with the same address are allowed to be\nreported. The last way is \"Scan Duplicate By Advertising Data\". This way is to use advertising data\nfiltering. All same advertising data only allow to be reported once even though they are from\ndifferent devices.",
-                                        "id": "component-config-bluetooth-bluetooth-controller-ble-scan-duplicate-options-scan-duplicate-type",
+                                        "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth--ble-scan-duplicate-options-scan-duplicate-type",
                                         "name": "BTDM_SCAN_DUPL_TYPE",
                                         "title": "Scan Duplicate Type",
                                         "type": "choice"
@@ -3062,8 +3143,1144 @@
                             }
                         ],
                         "depends_on": null,
-                        "id": "component-config-bluetooth-bluetooth-controller",
-                        "title": "Bluetooth controller",
+                        "id": "component-config-bluetooth-bluetooth-controller-esp32-dual-mode-bluetooth-",
+                        "title": "Bluetooth controller(ESP32 Dual Mode Bluetooth)",
+                        "type": "menu"
+                    },
+                    {
+                        "children": [
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_MODE_EFF",
+                                "name": "BT_CTRL_MODE_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "BLE maximum instances of bluetooth controller.",
+                                "id": "BT_CTRL_BLE_MAX_ACT",
+                                "name": "BT_CTRL_BLE_MAX_ACT",
+                                "range": [
+                                    1,
+                                    10
+                                ],
+                                "title": "BLE Max Instances",
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_BLE_MAX_ACT_EFF",
+                                "name": "BT_CTRL_BLE_MAX_ACT_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "BLE ACL buffer have two methods to be allocated. One is persistent allocating\n(alloate when controller initialise, never free until controller de-initialise)\nanother is dynamically allocating (allocate before TX and free after TX).",
+                                "id": "BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB",
+                                "name": "BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB",
+                                "range": [
+                                    0,
+                                    12
+                                ],
+                                "title": "BLE static ACL TX buffer numbers",
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_PINNED_TO_CORE",
+                                "name": "BT_CTRL_PINNED_TO_CORE",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_HCI_MODE_CHOICE>",
+                                        "help": "Normal option. Mostly, choose this VHCI when bluetooth host run on ESP32C3, too.",
+                                        "id": "BT_CTRL_HCI_MODE_VHCI",
+                                        "name": "BT_CTRL_HCI_MODE_VHCI",
+                                        "range": null,
+                                        "title": "VHCI",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_HCI_MODE_CHOICE>",
+                                        "help": "If use external bluetooth host which run on other hardware and use UART as the HCI interface,\nchoose this option.",
+                                        "id": "BT_CTRL_HCI_MODE_UART_H4",
+                                        "name": "BT_CTRL_HCI_MODE_UART_H4",
+                                        "range": null,
+                                        "title": "UART(H4)",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "Specify HCI mode as VHCI or UART(H4)",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32c3-bluetooth-low-energy--hci-mode",
+                                "name": "BT_CTRL_HCI_MODE_CHOICE",
+                                "title": "HCI mode",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "HCI mode as VHCI or UART(H4)",
+                                "id": "BT_CTRL_HCI_TL",
+                                "name": "BT_CTRL_HCI_TL",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "The maxinum number of suplicate scan filter",
+                                "id": "BT_CTRL_ADV_DUP_FILT_MAX",
+                                "name": "BT_CTRL_ADV_DUP_FILT_MAX",
+                                "range": [
+                                    1,
+                                    500
+                                ],
+                                "title": "The maxinum number of 5.0 extend duplicate scan filter",
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "It enables HW CCA feature in controller",
+                                "id": "BT_CTRL_HW_CCA",
+                                "name": "BT_CTRL_HW_CCA",
+                                "range": null,
+                                "title": "HW CCA check enable",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "If other devices are sending packets in the air and the signal is strong,\nthe packet hw to be sent this time is cancelled.",
+                                "id": "BT_CTRL_HW_CCA_EFF",
+                                "name": "BT_CTRL_HW_CCA_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_CE_LENGTH_TYPE>",
+                                        "help": null,
+                                        "id": "BT_CTRL_CE_LENGTH_TYPE_ORIG",
+                                        "name": "BT_CTRL_CE_LENGTH_TYPE_ORIG",
+                                        "range": null,
+                                        "title": "ORIGINAL",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_CE_LENGTH_TYPE>",
+                                        "help": null,
+                                        "id": "BT_CTRL_CE_LENGTH_TYPE_CE",
+                                        "name": "BT_CTRL_CE_LENGTH_TYPE_CE",
+                                        "range": null,
+                                        "title": "Use CE parameter for HCI command",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_CE_LENGTH_TYPE>",
+                                        "help": null,
+                                        "id": "BT_CTRL_CE_LENGTH_TYPE_SD",
+                                        "name": "BT_CTRL_CE_LENGTH_TYPE_SD",
+                                        "range": null,
+                                        "title": "Use Espressif self-defined method",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "Specify connection event length determination",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32c3-bluetooth-low-energy--connection-event-length-determination-method",
+                                "name": "BT_CTRL_CE_LENGTH_TYPE",
+                                "title": "Connection event length determination method",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_CE_LENGTH_TYPE_EFF",
+                                "name": "BT_CTRL_CE_LENGTH_TYPE_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_TX_ANTENNA_INDEX>",
+                                        "help": null,
+                                        "id": "BT_CTRL_TX_ANTENNA_INDEX_0",
+                                        "name": "BT_CTRL_TX_ANTENNA_INDEX_0",
+                                        "range": null,
+                                        "title": "Antenna 0",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_TX_ANTENNA_INDEX>",
+                                        "help": null,
+                                        "id": "BT_CTRL_TX_ANTENNA_INDEX_1",
+                                        "name": "BT_CTRL_TX_ANTENNA_INDEX_1",
+                                        "range": null,
+                                        "title": "Antenna 1",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "Specify default Tx antenna used for bluetooth",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32c3-bluetooth-low-energy--default-tx-anntena-used",
+                                "name": "BT_CTRL_TX_ANTENNA_INDEX",
+                                "title": "default Tx anntena used",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_TX_ANTENNA_INDEX_EFF",
+                                "name": "BT_CTRL_TX_ANTENNA_INDEX_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_RX_ANTENNA_INDEX>",
+                                        "help": null,
+                                        "id": "BT_CTRL_RX_ANTENNA_INDEX_0",
+                                        "name": "BT_CTRL_RX_ANTENNA_INDEX_0",
+                                        "range": null,
+                                        "title": "Antenna 0",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_RX_ANTENNA_INDEX>",
+                                        "help": null,
+                                        "id": "BT_CTRL_RX_ANTENNA_INDEX_1",
+                                        "name": "BT_CTRL_RX_ANTENNA_INDEX_1",
+                                        "range": null,
+                                        "title": "Antenna 1",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "Specify default Rx antenna used for bluetooth",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32c3-bluetooth-low-energy--default-rx-anntena-used",
+                                "name": "BT_CTRL_RX_ANTENNA_INDEX",
+                                "title": "default Rx anntena used",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_RX_ANTENNA_INDEX_EFF",
+                                "name": "BT_CTRL_RX_ANTENNA_INDEX_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_N12",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_N12",
+                                        "range": null,
+                                        "title": "-12dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_N9",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_N9",
+                                        "range": null,
+                                        "title": "-9dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_N6",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_N6",
+                                        "range": null,
+                                        "title": "-6dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_N3",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_N3",
+                                        "range": null,
+                                        "title": "-3dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_N0",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_N0",
+                                        "range": null,
+                                        "title": "0dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_P3",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_P3",
+                                        "range": null,
+                                        "title": "+3dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_P6",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_P6",
+                                        "range": null,
+                                        "title": "+6dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_P9",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_P9",
+                                        "range": null,
+                                        "title": "+9dBm",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "Specify default Tx power level",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32c3-bluetooth-low-energy--ble-default-tx-power-level",
+                                "name": "BT_CTRL_DFT_TX_POWER_LEVEL",
+                                "title": "BLE default Tx power level",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_DFT_TX_POWER_LEVEL_EFF",
+                                "name": "BT_CTRL_DFT_TX_POWER_LEVEL_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP",
+                                        "help": "The number of unprocessed advertising report that bluetooth host can save.If you set\n`BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM` to a small value, this may cause adv packets lost.\nIf you set `BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM` to a large value, bluetooth host may cache a\nlot of adv packets and this may cause system memory run out. For example, if you set\nit to 50, the maximum memory consumed by host is 35 * 50 bytes. Please set\n`BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM` according to your system free memory and handle adv\npackets as fast as possible, otherwise it will cause adv packets lost.",
+                                        "id": "BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM",
+                                        "name": "BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM",
+                                        "range": [
+                                            50,
+                                            1000
+                                        ],
+                                        "title": "BLE adv report flow control number",
+                                        "type": "int"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP",
+                                        "help": "When adv report flow control is enabled, The ADV lost event will be generated when the number\nof ADV packets lost in the controller reaches this threshold. It is better to set a larger value.\nIf you set `BT_CTRL_BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it\nmay cause adv packets lost more.",
+                                        "id": "BT_CTRL_BLE_ADV_REPORT_DISCARD_THRSHOLD",
+                                        "name": "BT_CTRL_BLE_ADV_REPORT_DISCARD_THRSHOLD",
+                                        "range": [
+                                            1,
+                                            1000
+                                        ],
+                                        "title": "BLE adv lost event threshold value",
+                                        "type": "int"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "The function is mainly used to enable flow control for advertising reports. When it is enabled,\nadvertising reports will be discarded by the controller if the number of unprocessed advertising\nreports exceeds the size of BLE adv report flow control.",
+                                "id": "BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP",
+                                "name": "BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP",
+                                "range": null,
+                                "title": "BLE adv report flow control supported",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [
+                                            {
+                                                "children": [],
+                                                "depends_on": "<choice BT_CTRL_SCAN_DUPL_TYPE>",
+                                                "help": "This way is to use advertiser address filtering. The adv packet of the same address is only\nallowed to be reported once",
+                                                "id": "BT_CTRL_SCAN_DUPL_TYPE_DEVICE",
+                                                "name": "BT_CTRL_SCAN_DUPL_TYPE_DEVICE",
+                                                "range": null,
+                                                "title": "Scan Duplicate By Device Address",
+                                                "type": "bool"
+                                            },
+                                            {
+                                                "children": [],
+                                                "depends_on": "<choice BT_CTRL_SCAN_DUPL_TYPE>",
+                                                "help": "This way is to use advertising data filtering. All same advertising data only allow to be reported\nonce even though they are from different devices.",
+                                                "id": "BT_CTRL_SCAN_DUPL_TYPE_DATA",
+                                                "name": "BT_CTRL_SCAN_DUPL_TYPE_DATA",
+                                                "range": null,
+                                                "title": "Scan Duplicate By Advertising Data",
+                                                "type": "bool"
+                                            },
+                                            {
+                                                "children": [],
+                                                "depends_on": "<choice BT_CTRL_SCAN_DUPL_TYPE>",
+                                                "help": "This way is to use advertising data and device address filtering. All different adv packets with\nthe same address are allowed to be reported.",
+                                                "id": "BT_CTRL_SCAN_DUPL_TYPE_DATA_DEVICE",
+                                                "name": "BT_CTRL_SCAN_DUPL_TYPE_DATA_DEVICE",
+                                                "range": null,
+                                                "title": "Scan Duplicate By Device Address And Advertising Data",
+                                                "type": "bool"
+                                            }
+                                        ],
+                                        "depends_on": "BT_CTRL_BLE_SCAN_DUPL",
+                                        "help": "Scan duplicate have three ways. one is \"Scan Duplicate By Device Address\", This way is to use\nadvertiser address filtering. The adv packet of the same address is only allowed to be reported once.\nAnother way is \"Scan Duplicate By Device Address And Advertising Data\". This way is to use advertising\ndata and device address filtering. All different adv packets with the same address are allowed to be\nreported. The last way is \"Scan Duplicate By Advertising Data\". This way is to use advertising data\nfiltering. All same advertising data only allow to be reported once even though they are from\ndifferent devices.",
+                                        "id": "component-config-bluetooth-bluetooth-controller-esp32c3-bluetooth-low-energy--ble-scan-duplicate-options-scan-duplicate-type",
+                                        "name": "BT_CTRL_SCAN_DUPL_TYPE",
+                                        "title": "Scan Duplicate Type",
+                                        "type": "choice"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "BT_CTRL_BLE_SCAN_DUPL",
+                                        "help": null,
+                                        "id": "BT_CTRL_SCAN_DUPL_TYPE",
+                                        "name": "BT_CTRL_SCAN_DUPL_TYPE",
+                                        "range": null,
+                                        "title": null,
+                                        "type": "int"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "BT_CTRL_BLE_SCAN_DUPL",
+                                        "help": "Maximum number of devices which can be recorded in scan duplicate filter.\nWhen the maximum amount of device in the filter is reached, the cache will be refreshed.",
+                                        "id": "BT_CTRL_SCAN_DUPL_CACHE_SIZE",
+                                        "name": "BT_CTRL_SCAN_DUPL_CACHE_SIZE",
+                                        "range": [
+                                            10,
+                                            1000
+                                        ],
+                                        "title": "Maximum number of devices in scan duplicate filter",
+                                        "type": "int"
+                                    },
+                                    {
+                                        "children": [
+                                            {
+                                                "children": [],
+                                                "depends_on": "BT_CTRL_BLE_MESH_SCAN_DUPL_EN",
+                                                "help": "Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.\nWhen the maximum amount of device in the filter is reached, the cache will be refreshed.",
+                                                "id": "BT_CTRL_MESH_DUPL_SCAN_CACHE_SIZE",
+                                                "name": "BT_CTRL_MESH_DUPL_SCAN_CACHE_SIZE",
+                                                "range": null,
+                                                "title": "Maximum number of Mesh adv packets in scan duplicate filter",
+                                                "type": "int"
+                                            }
+                                        ],
+                                        "depends_on": "BT_CTRL_BLE_SCAN_DUPL",
+                                        "help": "This enables the BLE scan duplicate for special BLE Mesh scan.",
+                                        "id": "BT_CTRL_BLE_MESH_SCAN_DUPL_EN",
+                                        "name": "BT_CTRL_BLE_MESH_SCAN_DUPL_EN",
+                                        "range": null,
+                                        "title": "Special duplicate scan mechanism for BLE Mesh scan",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "This select enables parameters setting of BLE scan duplicate.",
+                                "id": "BT_CTRL_BLE_SCAN_DUPL",
+                                "name": "BT_CTRL_BLE_SCAN_DUPL",
+                                "range": null,
+                                "title": "BLE Scan Duplicate Options",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM>",
+                                        "help": "Always enable the limitation on max tx/rx time for Coded-PHY connection",
+                                        "id": "BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EN",
+                                        "name": "BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EN",
+                                        "range": null,
+                                        "title": "Force Enable",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM>",
+                                        "help": "Disable the limitation on max tx/rx time for Coded-PHY connection",
+                                        "id": "BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_DIS",
+                                        "name": "BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_DIS",
+                                        "range": null,
+                                        "title": "Force Disable",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": "ESP32_WIFI_SW_COEXIST_ENABLE",
+                                "help": "When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to\nbetter avoid dramatic performance deterioration of Wi-Fi.",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32c3-bluetooth-low-energy--coexistence-limit-on-max-tx-rx-time-for-coded-phy-connection",
+                                "name": "BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM",
+                                "title": "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF",
+                                "name": "BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [
+                                            {
+                                                "children": [
+                                                    {
+                                                        "children": [
+                                                            {
+                                                                "children": [],
+                                                                "depends_on": "<choice BT_CTRL_LOW_POWER_CLOCK>",
+                                                                "help": "Main crystal can be used as low power clock for bluetooth modem sleep. If this option is\nselected, bluetooth modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, but\ncannot work when light sleep is enabled. Main crystal has a relatively better performance than\nother bluetooth low power clock sources.",
+                                                                "id": "BT_CTRL_LPCLK_SEL_MAIN_XTAL",
+                                                                "name": "BT_CTRL_LPCLK_SEL_MAIN_XTAL",
+                                                                "range": null,
+                                                                "title": "Main crystal",
+                                                                "type": "bool"
+                                                            },
+                                                            {
+                                                                "children": [],
+                                                                "depends_on": "ESP32C3_RTC_CLK_SRC_EXT_CRYS && <choice BT_CTRL_LOW_POWER_CLOCK>",
+                                                                "help": "External 32kHz crystal has a nominal frequency of 32.768kHz and provides good frequency\nstability. If used as Bluetooth low power clock, External 32kHz can support Bluetooth\nmodem sleep to be used with both DFS and light sleep.",
+                                                                "id": "BT_CTRL_LPCLK_SEL_EXT_32K_XTAL",
+                                                                "name": "BT_CTRL_LPCLK_SEL_EXT_32K_XTAL",
+                                                                "range": null,
+                                                                "title": "External 32kHz crystal",
+                                                                "type": "bool"
+                                                            },
+                                                            {
+                                                                "children": [],
+                                                                "depends_on": "ESP32C3_RTC_CLK_SRC_INT_RC && <choice BT_CTRL_LOW_POWER_CLOCK>",
+                                                                "help": "Internal 150kHz RC oscillator.",
+                                                                "id": "BT_CTRL_LPCLK_SEL_RTC_SLOW",
+                                                                "name": "BT_CTRL_LPCLK_SEL_RTC_SLOW",
+                                                                "range": null,
+                                                                "title": "Internal 150kHz RC oscillator",
+                                                                "type": "bool"
+                                                            }
+                                                        ],
+                                                        "depends_on": "BT_CTRL_MODEM_SLEEP_MODE_1",
+                                                        "help": "Select the low power clock source for bluetooth controller",
+                                                        "id": "component-config-bluetooth-bluetooth-controller-esp32c3-bluetooth-low-energy--modem-sleep-options-bluetooth-modem-sleep-bluetooth-modem-sleep-mode-1-bluetooth-low-power-clock",
+                                                        "name": "BT_CTRL_LOW_POWER_CLOCK",
+                                                        "title": "Bluetooth low power clock",
+                                                        "type": "choice"
+                                                    }
+                                                ],
+                                                "depends_on": "BT_CTRL_MODEM_SLEEP",
+                                                "help": "Mode 1 is the currently supported sleep mode. In this mode,\nbluetooth controller sleeps between and BLE events. A low\npower clock is used to maintain bluetooth reference clock.",
+                                                "id": "BT_CTRL_MODEM_SLEEP_MODE_1",
+                                                "name": "BT_CTRL_MODEM_SLEEP_MODE_1",
+                                                "range": null,
+                                                "title": "Bluetooth Modem sleep Mode 1",
+                                                "type": "bool"
+                                            }
+                                        ],
+                                        "depends_on": "!BT_CTRL_HCI_MODE_UART_H4",
+                                        "help": "Enable/disable bluetooth controller low power mode.\nModem sleep is not supported to be used with UART HCI.",
+                                        "id": "BT_CTRL_MODEM_SLEEP",
+                                        "name": "BT_CTRL_MODEM_SLEEP",
+                                        "range": null,
+                                        "title": "Bluetooth modem sleep",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32c3-bluetooth-low-energy--modem-sleep-options",
+                                "title": "MODEM SLEEP Options",
+                                "type": "menu"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_SLEEP_MODE_EFF",
+                                "name": "BT_CTRL_SLEEP_MODE_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_SLEEP_CLOCK_EFF",
+                                "name": "BT_CTRL_SLEEP_CLOCK_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_HCI_TL_EFF",
+                                "name": "BT_CTRL_HCI_TL_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            }
+                        ],
+                        "depends_on": null,
+                        "id": "component-config-bluetooth-bluetooth-controller-esp32c3-bluetooth-low-energy-",
+                        "title": "Bluetooth controller(ESP32C3 Bluetooth Low Energy)",
+                        "type": "menu"
+                    },
+                    {
+                        "children": [
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_MODE_EFF",
+                                "name": "BT_CTRL_MODE_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "BLE maximum instances of bluetooth controller.",
+                                "id": "BT_CTRL_BLE_MAX_ACT",
+                                "name": "BT_CTRL_BLE_MAX_ACT",
+                                "range": [
+                                    1,
+                                    10
+                                ],
+                                "title": "BLE Max Instances",
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_BLE_MAX_ACT_EFF",
+                                "name": "BT_CTRL_BLE_MAX_ACT_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "BLE ACL buffer have two methods to be allocated. One is persistent allocating\n(alloate when controller initialise, never free until controller de-initialise)\nanother is dynamically allocating (allocate before TX and free after TX).",
+                                "id": "BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB",
+                                "name": "BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB",
+                                "range": [
+                                    0,
+                                    12
+                                ],
+                                "title": "BLE static ACL TX buffer numbers",
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_PINNED_TO_CORE_CHOICE>",
+                                        "help": null,
+                                        "id": "BT_CTRL_PINNED_TO_CORE_0",
+                                        "name": "BT_CTRL_PINNED_TO_CORE_0",
+                                        "range": null,
+                                        "title": "Core 0 (PRO CPU)",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "!FREERTOS_UNICORE && <choice BT_CTRL_PINNED_TO_CORE_CHOICE>",
+                                        "help": null,
+                                        "id": "BT_CTRL_PINNED_TO_CORE_1",
+                                        "name": "BT_CTRL_PINNED_TO_CORE_1",
+                                        "range": null,
+                                        "title": "Core 1 (APP CPU)",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": "!FREERTOS_UNICORE",
+                                "help": "Specify the cpu core to run bluetooth controller.\nCan not specify no-affinity.",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32s3-bluetooth-low-energy--the-cpu-core-which-bluetooth-controller-run",
+                                "name": "BT_CTRL_PINNED_TO_CORE_CHOICE",
+                                "title": "The cpu core which bluetooth controller run",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_PINNED_TO_CORE",
+                                "name": "BT_CTRL_PINNED_TO_CORE",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_HCI_MODE_CHOICE>",
+                                        "help": "Normal option. Mostly, choose this VHCI when bluetooth host run on ESP32S3, too.",
+                                        "id": "BT_CTRL_HCI_MODE_VHCI",
+                                        "name": "BT_CTRL_HCI_MODE_VHCI",
+                                        "range": null,
+                                        "title": "VHCI",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_HCI_MODE_CHOICE>",
+                                        "help": "If use external bluetooth host which run on other hardware and use UART as the HCI interface,\nchoose this option.",
+                                        "id": "BT_CTRL_HCI_MODE_UART_H4",
+                                        "name": "BT_CTRL_HCI_MODE_UART_H4",
+                                        "range": null,
+                                        "title": "UART(H4)",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "Specify HCI mode as VHCI or UART(H4)",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32s3-bluetooth-low-energy--hci-mode",
+                                "name": "BT_CTRL_HCI_MODE_CHOICE",
+                                "title": "HCI mode",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_HCI_TL",
+                                "name": "BT_CTRL_HCI_TL",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "The maxinum number of suplicate scan filter",
+                                "id": "BT_CTRL_ADV_DUP_FILT_MAX",
+                                "name": "BT_CTRL_ADV_DUP_FILT_MAX",
+                                "range": [
+                                    1,
+                                    500
+                                ],
+                                "title": "The maxinum number of 5.0 extend duplicate scan filter",
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "It enables HW CCA feature in controller",
+                                "id": "BT_CTRL_HW_CCA",
+                                "name": "BT_CTRL_HW_CCA",
+                                "range": null,
+                                "title": "HW CCA check enable",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_HW_CCA_EFF",
+                                "name": "BT_CTRL_HW_CCA_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "Use pre-determined parameter set to control the use of RF by Bluetooth,s\nso that Bluetooth can compete for RF with Wi-fi to support coexistence.",
+                                "id": "BT_CTRL_COEX_PARAMETERS_ENABLE",
+                                "name": "BT_CTRL_COEX_PARAMETERS_ENABLE",
+                                "range": null,
+                                "title": "Allow Bluetooth preemption in the use of RF to support coexistence with Wi-Fi",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_CE_LENGTH_TYPE>",
+                                        "help": null,
+                                        "id": "BT_CTRL_CE_LENGTH_TYPE_ORIG",
+                                        "name": "BT_CTRL_CE_LENGTH_TYPE_ORIG",
+                                        "range": null,
+                                        "title": "ORIGINAL",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_CE_LENGTH_TYPE>",
+                                        "help": null,
+                                        "id": "BT_CTRL_CE_LENGTH_TYPE_CE",
+                                        "name": "BT_CTRL_CE_LENGTH_TYPE_CE",
+                                        "range": null,
+                                        "title": "Use CE parameter for HCI command",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_CE_LENGTH_TYPE>",
+                                        "help": null,
+                                        "id": "BT_CTRL_CE_LENGTH_TYPE_SD",
+                                        "name": "BT_CTRL_CE_LENGTH_TYPE_SD",
+                                        "range": null,
+                                        "title": "Use Espressif self-defined method",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "Specify connection event length determination",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32s3-bluetooth-low-energy--connection-event-length-determination-method",
+                                "name": "BT_CTRL_CE_LENGTH_TYPE",
+                                "title": "Connection event length determination method",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_CE_LENGTH_TYPE_EFF",
+                                "name": "BT_CTRL_CE_LENGTH_TYPE_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_TX_ANTENNA_INDEX>",
+                                        "help": null,
+                                        "id": "BT_CTRL_TX_ANTENNA_INDEX_0",
+                                        "name": "BT_CTRL_TX_ANTENNA_INDEX_0",
+                                        "range": null,
+                                        "title": "Antenna 0",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_TX_ANTENNA_INDEX>",
+                                        "help": null,
+                                        "id": "BT_CTRL_TX_ANTENNA_INDEX_1",
+                                        "name": "BT_CTRL_TX_ANTENNA_INDEX_1",
+                                        "range": null,
+                                        "title": "Antenna 1",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "Specify default Tx antenna used for bluetooth",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32s3-bluetooth-low-energy--default-tx-anntena-used",
+                                "name": "BT_CTRL_TX_ANTENNA_INDEX",
+                                "title": "default Tx anntena used",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_TX_ANTENNA_INDEX_EFF",
+                                "name": "BT_CTRL_TX_ANTENNA_INDEX_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_RX_ANTENNA_INDEX>",
+                                        "help": null,
+                                        "id": "BT_CTRL_RX_ANTENNA_INDEX_0",
+                                        "name": "BT_CTRL_RX_ANTENNA_INDEX_0",
+                                        "range": null,
+                                        "title": "Antenna 0",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_RX_ANTENNA_INDEX>",
+                                        "help": null,
+                                        "id": "BT_CTRL_RX_ANTENNA_INDEX_1",
+                                        "name": "BT_CTRL_RX_ANTENNA_INDEX_1",
+                                        "range": null,
+                                        "title": "Antenna 1",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "Specify default Rx antenna used for bluetooth",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32s3-bluetooth-low-energy--default-rx-anntena-used",
+                                "name": "BT_CTRL_RX_ANTENNA_INDEX",
+                                "title": "default Rx anntena used",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_RX_ANTENNA_INDEX_EFF",
+                                "name": "BT_CTRL_RX_ANTENNA_INDEX_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_N12",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_N12",
+                                        "range": null,
+                                        "title": "-12dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_N9",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_N9",
+                                        "range": null,
+                                        "title": "-9dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_N6",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_N6",
+                                        "range": null,
+                                        "title": "-6dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_N3",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_N3",
+                                        "range": null,
+                                        "title": "-3dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_N0",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_N0",
+                                        "range": null,
+                                        "title": "0dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_P3",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_P3",
+                                        "range": null,
+                                        "title": "+3dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_P6",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_P6",
+                                        "range": null,
+                                        "title": "+6dBm",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_CTRL_DFT_TX_POWER_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_CTRL_DFT_TX_POWER_LEVEL_P9",
+                                        "name": "BT_CTRL_DFT_TX_POWER_LEVEL_P9",
+                                        "range": null,
+                                        "title": "+9dBm",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "help": "Specify default Tx power level",
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32s3-bluetooth-low-energy--ble-default-tx-power-level",
+                                "name": "BT_CTRL_DFT_TX_POWER_LEVEL",
+                                "title": "BLE default Tx power level",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_DFT_TX_POWER_LEVEL_EFF",
+                                "name": "BT_CTRL_DFT_TX_POWER_LEVEL_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "Send notifications of Bluetooth working status to support coexistence with Wi-Fi.",
+                                "id": "BT_CTRL_COEX_USE_HOOKS",
+                                "name": "BT_CTRL_COEX_USE_HOOKS",
+                                "range": null,
+                                "title": "Communicate Bluetooth working status with Wi-Fi to support coexistence",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [
+                                            {
+                                                "children": [
+                                                    {
+                                                        "children": [
+                                                            {
+                                                                "children": [],
+                                                                "depends_on": "<choice BT_CTRL_LOW_POWER_CLOCK>",
+                                                                "help": "Main crystal can be used as low power clock for bluetooth modem sleep. If this option is\nselected, bluetooth modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, but\ncannot work when light sleep is enabled. Main crystal has a relatively better performance than\nother bluetooth low power clock sources.",
+                                                                "id": "BT_CTRL_LPCLK_SEL_MAIN_XTAL",
+                                                                "name": "BT_CTRL_LPCLK_SEL_MAIN_XTAL",
+                                                                "range": null,
+                                                                "title": "Main crystal",
+                                                                "type": "bool"
+                                                            }
+                                                        ],
+                                                        "depends_on": "BT_CTRL_MODEM_SLEEP_MODE_1",
+                                                        "help": "Select the low power clock source for bluetooth controller",
+                                                        "id": "component-config-bluetooth-bluetooth-controller-esp32s3-bluetooth-low-energy--modem-sleep-options-bluetooth-modem-sleep-bluetooth-modem-sleep-mode-1-bluetooth-low-power-clock",
+                                                        "name": "BT_CTRL_LOW_POWER_CLOCK",
+                                                        "title": "Bluetooth low power clock",
+                                                        "type": "choice"
+                                                    }
+                                                ],
+                                                "depends_on": "BT_CTRL_MODEM_SLEEP",
+                                                "help": "Mode 1 is the currently supported sleep mode. In this mode,\nbluetooth controller sleeps between and BLE events. A low\npower clock is used to maintain bluetooth reference clock.",
+                                                "id": "BT_CTRL_MODEM_SLEEP_MODE_1",
+                                                "name": "BT_CTRL_MODEM_SLEEP_MODE_1",
+                                                "range": null,
+                                                "title": "Bluetooth Modem sleep Mode 1",
+                                                "type": "bool"
+                                            }
+                                        ],
+                                        "depends_on": "!BT_CTRL_HCI_MODE_UART_H4",
+                                        "help": "Enable/disable bluetooth controller low power mode.\nModem sleep is not supported to be used with UART HCI.",
+                                        "id": "BT_CTRL_MODEM_SLEEP",
+                                        "name": "BT_CTRL_MODEM_SLEEP",
+                                        "range": null,
+                                        "title": "Bluetooth modem sleep",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": null,
+                                "id": "component-config-bluetooth-bluetooth-controller-esp32s3-bluetooth-low-energy--modem-sleep-options",
+                                "title": "MODEM SLEEP Options",
+                                "type": "menu"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_SLEEP_MODE_EFF",
+                                "name": "BT_CTRL_SLEEP_MODE_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_SLEEP_CLOCK_EFF",
+                                "name": "BT_CTRL_SLEEP_CLOCK_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_CTRL_HCI_TL_EFF",
+                                "name": "BT_CTRL_HCI_TL_EFF",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
+                            }
+                        ],
+                        "depends_on": null,
+                        "id": "component-config-bluetooth-bluetooth-controller-esp32s3-bluetooth-low-energy-",
+                        "title": "Bluetooth controller(ESP32S3 Bluetooth Low Energy)",
                         "type": "menu"
                     },
                     {
@@ -3099,7 +4316,7 @@
                                 "type": "bool"
                             }
                         ],
-                        "depends_on": "BT_ENABLED && BTDM_CTRL_HCI_MODE_VHCI",
+                        "depends_on": "BT_ENABLED && (BTDM_CTRL_HCI_MODE_VHCI || BT_CTRL_HCI_MODE_VHCI)",
                         "help": "This helps to choose Bluetooth host stack",
                         "id": "component-config-bluetooth-bluetooth-host",
                         "name": "BT_HOST",
@@ -3272,7 +4489,7 @@
                                         "type": "bool"
                                     }
                                 ],
-                                "depends_on": "BT_BLUEDROID_ENABLED",
+                                "depends_on": "BT_BLUEDROID_ENABLED && BT_CTRL_ESP32",
                                 "help": "For now this option needs \"SMP_ENABLE\" to be set to yes",
                                 "id": "BT_CLASSIC_ENABLED",
                                 "name": "BT_CLASSIC_ENABLED",
@@ -5414,6 +6631,36 @@
                             },
                             {
                                 "children": [],
+                                "depends_on": "BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)",
+                                "help": "This enables controller RPA list function.",
+                                "id": "BT_BLE_RPA_SUPPORTED",
+                                "name": "BT_BLE_RPA_SUPPORTED",
+                                "range": null,
+                                "title": "Update RPA to Controller",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)",
+                                "help": "This enables BLE 5.0 features, this option only support esp32c3/esp32s3 chip",
+                                "id": "BT_BLE_50_FEATURES_SUPPORTED",
+                                "name": "BT_BLE_50_FEATURES_SUPPORTED",
+                                "range": null,
+                                "title": "Enable BLE 5.0 features",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)",
+                                "help": "This enables BLE 4.2 features.",
+                                "id": "BT_BLE_42_FEATURES_SUPPORTED",
+                                "name": "BT_BLE_42_FEATURES_SUPPORTED",
+                                "range": null,
+                                "title": "Enable BLE 4.2 features",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
                                 "depends_on": null,
                                 "help": null,
                                 "id": "BT_RESERVE_DRAM",
@@ -5479,6 +6726,86 @@
                                 "name": "BT_NIMBLE_MEM_ALLOC_MODE",
                                 "title": "Memory allocation strategy",
                                 "type": "choice"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_NIMBLE_LOG_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_NIMBLE_LOG_LEVEL_NONE",
+                                        "name": "BT_NIMBLE_LOG_LEVEL_NONE",
+                                        "range": null,
+                                        "title": "No logs",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_NIMBLE_LOG_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_NIMBLE_LOG_LEVEL_CRIT",
+                                        "name": "BT_NIMBLE_LOG_LEVEL_CRIT",
+                                        "range": null,
+                                        "title": "Critical logs",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_NIMBLE_LOG_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_NIMBLE_LOG_LEVEL_ERROR",
+                                        "name": "BT_NIMBLE_LOG_LEVEL_ERROR",
+                                        "range": null,
+                                        "title": "Error logs",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_NIMBLE_LOG_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_NIMBLE_LOG_LEVEL_WARNING",
+                                        "name": "BT_NIMBLE_LOG_LEVEL_WARNING",
+                                        "range": null,
+                                        "title": "Warning logs",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_NIMBLE_LOG_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_NIMBLE_LOG_LEVEL_INFO",
+                                        "name": "BT_NIMBLE_LOG_LEVEL_INFO",
+                                        "range": null,
+                                        "title": "Info logs",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "<choice BT_NIMBLE_LOG_LEVEL>",
+                                        "help": null,
+                                        "id": "BT_NIMBLE_LOG_LEVEL_DEBUG",
+                                        "name": "BT_NIMBLE_LOG_LEVEL_DEBUG",
+                                        "range": null,
+                                        "title": "Debug logs",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": "BT_NIMBLE_ENABLED",
+                                "help": "Select NimBLE log level. Please make a note that the selected NimBLE log\nverbosity can not exceed the level set in \"Component config --> Log output\n--> Default log verbosity\".",
+                                "id": "component-config-bluetooth-nimble-options-nimble-host-log-verbosity",
+                                "name": "BT_NIMBLE_LOG_LEVEL",
+                                "title": "NimBLE Host log verbosity",
+                                "type": "choice"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "BT_NIMBLE_LOG_LEVEL",
+                                "name": "BT_NIMBLE_LOG_LEVEL",
+                                "range": null,
+                                "title": null,
+                                "type": "int"
                             },
                             {
                                 "children": [],
@@ -5723,7 +7050,7 @@
                             {
                                 "children": [],
                                 "depends_on": "BT_NIMBLE_ENABLED",
-                                "help": "This is the size of each HCI event buffer in bytes",
+                                "help": "This is the size of each HCI event buffer in bytes. In case of\nextended advertising, packets can be fragmented. 257 bytes is the\nmaximum size of a packet.",
                                 "id": "BT_NIMBLE_HCI_EVT_BUF_SIZE",
                                 "name": "BT_NIMBLE_HCI_EVT_BUF_SIZE",
                                 "range": null,
@@ -5903,6 +7230,26 @@
                                         "range": null,
                                         "title": "Set mesh device name",
                                         "type": "string"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "BT_NIMBLE_MESH",
+                                        "help": "Defines mesh node count.",
+                                        "id": "BT_NIMBLE_MESH_NODE_COUNT",
+                                        "name": "BT_NIMBLE_MESH_NODE_COUNT",
+                                        "range": null,
+                                        "title": "Set mesh node count",
+                                        "type": "int"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "BT_NIMBLE_MESH",
+                                        "help": "Enable mesh provisioner.",
+                                        "id": "BT_NIMBLE_MESH_PROVISIONER",
+                                        "name": "BT_NIMBLE_MESH_PROVISIONER",
+                                        "range": null,
+                                        "title": "Enable BLE mesh provisioner",
+                                        "type": "bool"
                                     }
                                 ],
                                 "depends_on": "BT_NIMBLE_ENABLED",
@@ -5922,6 +7269,78 @@
                                 "name": "BT_NIMBLE_CRYPTO_STACK_MBEDTLS",
                                 "range": null,
                                 "title": "Override TinyCrypt with mbedTLS for crypto computations",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "BT_NIMBLE_ENABLED",
+                                "help": "BLE Host stop procedure timeout in milliseconds.",
+                                "id": "BT_NIMBLE_HS_STOP_TIMEOUT_MS",
+                                "name": "BT_NIMBLE_HS_STOP_TIMEOUT_MS",
+                                "range": null,
+                                "title": "BLE host stop timeout in msec",
+                                "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "BT_NIMBLE_ENABLED && !IDF_TARGET_ESP32",
+                                "help": "Use this option to do host based Random Private Address resolution.\nIf this option is disabled then controller based privacy is used.",
+                                "id": "BT_NIMBLE_HOST_BASED_PRIVACY",
+                                "name": "BT_NIMBLE_HOST_BASED_PRIVACY",
+                                "range": null,
+                                "title": "Enable host based privacy for random address.",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "BT_NIMBLE_EXT_ADV",
+                                        "help": "Change this option to set maximum number of extended advertising\ninstances. Minimum there is always one instance of\nadvertising. Enter how many more advertising instances you\nwant.",
+                                        "id": "BT_NIMBLE_MAX_EXT_ADV_INSTANCES",
+                                        "name": "BT_NIMBLE_MAX_EXT_ADV_INSTANCES",
+                                        "range": null,
+                                        "title": "Maximum number of extended advertising instances.",
+                                        "type": "int"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "BT_NIMBLE_EXT_ADV",
+                                        "help": "Defines size of extended advertising data. Size should not increase\n1650.",
+                                        "id": "BT_NIMBLE_MAX_EXT_ADV_DATA_LEN",
+                                        "name": "BT_NIMBLE_MAX_EXT_ADV_DATA_LEN",
+                                        "range": null,
+                                        "title": "Maximum length of the advertising data.",
+                                        "type": "int"
+                                    },
+                                    {
+                                        "children": [
+                                            {
+                                                "children": [],
+                                                "depends_on": "BT_NIMBLE_ENABLE_PERIODIC_ADV",
+                                                "help": "Set this option to set the upper limit for number of periodic sync\nconnections. This should be less than maximum connections allowed by\ncontroller.",
+                                                "id": "BT_NIMBLE_MAX_PERIODIC_SYNCS",
+                                                "name": "BT_NIMBLE_MAX_PERIODIC_SYNCS",
+                                                "range": null,
+                                                "title": "Maximum number of periodic advertising syncs.",
+                                                "type": "int"
+                                            }
+                                        ],
+                                        "depends_on": "BT_NIMBLE_EXT_ADV",
+                                        "help": "Enable this option to start periodic advertisement.",
+                                        "id": "BT_NIMBLE_ENABLE_PERIODIC_ADV",
+                                        "name": "BT_NIMBLE_ENABLE_PERIODIC_ADV",
+                                        "range": null,
+                                        "title": "Enable periodic advertisement.",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": "BT_NIMBLE_ENABLED && BT_SOC_SUPPORT_5_0",
+                                "help": "Enable this option to do extended advertising. Extended advertising\nwill be supported from BLE 5.0 onwards.",
+                                "id": "BT_NIMBLE_EXT_ADV",
+                                "name": "BT_NIMBLE_EXT_ADV",
+                                "range": null,
+                                "title": "Enable extended advertising.",
                                 "type": "bool"
                             }
                         ],
@@ -6058,6 +7477,45 @@
                         "range": null,
                         "title": "Support de-initialize BLE Mesh stack",
                         "type": "bool"
+                    },
+                    {
+                        "children": [
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "BLE_MESH_SUPPORT_BLE_ADV && BLE_MESH",
+                                        "help": "Number of advertising buffers for BLE packets available.",
+                                        "id": "BLE_MESH_BLE_ADV_BUF_COUNT",
+                                        "name": "BLE_MESH_BLE_ADV_BUF_COUNT",
+                                        "range": null,
+                                        "title": "Number of advertising buffers for BLE advertising packets",
+                                        "type": "int"
+                                    }
+                                ],
+                                "depends_on": "BLE_MESH",
+                                "help": "When selected, users can send normal BLE advertising packets\nwith specific API.",
+                                "id": "BLE_MESH_SUPPORT_BLE_ADV",
+                                "name": "BLE_MESH_SUPPORT_BLE_ADV",
+                                "range": null,
+                                "title": "Support sending normal BLE advertising packets",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "BLE_MESH",
+                                "help": "When selected, users can register a callback and receive normal BLE\nadvertising packets in the application layer.",
+                                "id": "BLE_MESH_SUPPORT_BLE_SCAN",
+                                "name": "BLE_MESH_SUPPORT_BLE_SCAN",
+                                "range": null,
+                                "title": "Support scanning normal BLE advertising packets",
+                                "type": "bool"
+                            }
+                        ],
+                        "depends_on": "BLE_MESH",
+                        "id": "component-config-esp-ble-mesh-support-ble-mesh-and-ble-coexistence-support",
+                        "title": "BLE Mesh and BLE coexistence support",
+                        "type": "menu"
                     },
                     {
                         "children": [],
@@ -6434,27 +7892,6 @@
                         "range": null,
                         "title": "Number of advertising buffers",
                         "type": "int"
-                    },
-                    {
-                        "children": [
-                            {
-                                "children": [],
-                                "depends_on": "BLE_MESH_SUPPORT_BLE_ADV && BLE_MESH",
-                                "help": "Number of advertising buffers for BLE packets available.",
-                                "id": "BLE_MESH_BLE_ADV_BUF_COUNT",
-                                "name": "BLE_MESH_BLE_ADV_BUF_COUNT",
-                                "range": null,
-                                "title": "Number of advertising buffers for BLE advertising packets",
-                                "type": "int"
-                            }
-                        ],
-                        "depends_on": "BLE_MESH",
-                        "help": "When selected, users can send normal BLE advertising packets\nwith specific API.",
-                        "id": "BLE_MESH_SUPPORT_BLE_ADV",
-                        "name": "BLE_MESH_SUPPORT_BLE_ADV",
-                        "range": null,
-                        "title": "Support sending normal BLE advertising packets",
-                        "type": "bool"
                     },
                     {
                         "children": [],
@@ -7653,6 +9090,24 @@
                         "id": "component-config-driver-configurations-rtcio-configuration",
                         "title": "RTCIO configuration",
                         "type": "menu"
+                    },
+                    {
+                        "children": [
+                            {
+                                "children": [],
+                                "depends_on": "IDF_TARGET_ESP32",
+                                "help": "This option is intended to fix the bug that ESP32 is not able to switch to configured\npullup/pulldown mode in sleep.\nIf this option is selected, chip will automatically emulate the behaviour of switching,\nand about 450B of source codes would be placed into IRAM.",
+                                "id": "GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL",
+                                "name": "GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL",
+                                "range": null,
+                                "title": "Support light sleep GPIO pullup/pulldown configuration for ESP32",
+                                "type": "bool"
+                            }
+                        ],
+                        "depends_on": null,
+                        "id": "component-config-driver-configurations-gpio-configuration",
+                        "title": "GPIO Configuration",
+                        "type": "menu"
                     }
                 ],
                 "depends_on": null,
@@ -7793,7 +9248,7 @@
                     },
                     {
                         "children": [],
-                        "depends_on": "IDF_TARGET_ESP32S2 && ESP_TLS_USING_MBEDTLS",
+                        "depends_on": "(IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S2) && ESP_TLS_USING_MBEDTLS",
                         "help": "Enable use of the Digital Signature Peripheral for ESP-TLS.The DS peripheral\ncan only be used when it is appropriately configured for TLS.\nConsult the ESP-TLS documentation in ESP-IDF Programming Guide for more details.",
                         "id": "ESP_TLS_USE_DS_PERIPHERAL",
                         "name": "ESP_TLS_USE_DS_PERIPHERAL",
@@ -7819,6 +9274,27 @@
                         "name": "ESP_TLS_PSK_VERIFICATION",
                         "range": null,
                         "title": "Enable PSK verification",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [
+                            {
+                                "children": [],
+                                "depends_on": "ESP_TLS_INSECURE",
+                                "help": "After enabling this option the esp-tls client will skip the server certificate verification\nby default. Note that this option will only modify the default behaviour of esp-tls client\nregarding server cert verification. The default behaviour should only be applicable when\nno other option regarding the server cert verification is opted in the esp-tls config\n(e.g. crt_bundle_attach, use_global_ca_store etc.).\nWARNING : Enabling this option comes with a potential risk of establishing a TLS connection\nwith a server which has a fake identity, provided that the server certificate\nis not provided either through API or other mechanism like ca_store etc.",
+                                "id": "ESP_TLS_SKIP_SERVER_CERT_VERIFY",
+                                "name": "ESP_TLS_SKIP_SERVER_CERT_VERIFY",
+                                "range": null,
+                                "title": "Skip server certificate verification by default (WARNING: ONLY FOR TESTING PURPOSE, READ HELP)",
+                                "type": "bool"
+                            }
+                        ],
+                        "depends_on": null,
+                        "help": "You can enable some potentially insecure options. These options should only be used for testing pusposes.\nOnly enable these options if you are very sure.",
+                        "id": "ESP_TLS_INSECURE",
+                        "name": "ESP_TLS_INSECURE",
+                        "range": null,
+                        "title": "Allow potentially insecure options",
                         "type": "bool"
                     },
                     {
@@ -7908,35 +9384,6 @@
                         "range": null,
                         "title": null,
                         "type": "int"
-                    },
-                    {
-                        "children": [
-                            {
-                                "children": [
-                                    {
-                                        "children": [],
-                                        "depends_on": "ESP32S2_MEMPROT_FEATURE",
-                                        "help": "Once locked, memory protection settings cannot be changed anymore.\nThe lock is reset only on the chip startup.",
-                                        "id": "ESP32S2_MEMPROT_FEATURE_LOCK",
-                                        "name": "ESP32S2_MEMPROT_FEATURE_LOCK",
-                                        "range": null,
-                                        "title": "Lock memory protection settings",
-                                        "type": "bool"
-                                    }
-                                ],
-                                "depends_on": null,
-                                "help": "If enabled, permission control module watches all memory access and fires panic handler\nif permission violation is detected. This feature automatically splits\nmemory into data and instruction segments and sets Read/Execute permissions\nfor instruction part (below splitting address) and Read/Write permissions\nfor data part (above splitting address). The memory protection is effective\non all access through IRAM0 and DRAM0 buses.",
-                                "id": "ESP32S2_MEMPROT_FEATURE",
-                                "name": "ESP32S2_MEMPROT_FEATURE",
-                                "range": null,
-                                "title": "Enable memory protection",
-                                "type": "bool"
-                            }
-                        ],
-                        "depends_on": null,
-                        "id": "component-config-esp32s2-specific-memory-protection",
-                        "title": "Memory protection",
-                        "type": "menu"
                     },
                     {
                         "children": [
@@ -8802,16 +10249,6 @@
                         "range": null,
                         "title": "Use fixed static RAM size",
                         "type": "bool"
-                    },
-                    {
-                        "children": [],
-                        "depends_on": null,
-                        "help": "This config option allows to add RTC fast memory region to system heap with capability\nsimilar to that of DRAM region but without DMA. This memory will be consumed first per\nheap initialization order by early startup services and scheduler related code. Speed\nwise RTC fast memory operates on APB clock and hence does not have much performance impact.",
-                        "id": "ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP",
-                        "name": "ESP32S2_ALLOW_RTC_FAST_MEM_AS_HEAP",
-                        "range": null,
-                        "title": "Enable RTC fast memory for dynamic allocations",
-                        "type": "bool"
                     }
                 ],
                 "depends_on": null,
@@ -8993,6 +10430,16 @@
                         "type": "bool"
                     },
                     {
+                        "children": [],
+                        "depends_on": null,
+                        "help": null,
+                        "id": "ESP_CONSOLE_MULTIPLE_UART",
+                        "name": "ESP_CONSOLE_MULTIPLE_UART",
+                        "range": null,
+                        "title": null,
+                        "type": "bool"
+                    },
+                    {
                         "children": [
                             {
                                 "children": [],
@@ -9015,7 +10462,7 @@
                                 "type": "bool"
                             }
                         ],
-                        "depends_on": "ESP_CONSOLE_UART_CUSTOM",
+                        "depends_on": "ESP_CONSOLE_UART_CUSTOM && ESP_CONSOLE_MULTIPLE_UART",
                         "help": "This UART peripheral is used for console output from the ESP-IDF Bootloader and the app.\n\nIf the configuration is different in the Bootloader binary compared to the app binary, UART\nis reconfigured after the bootloader exits and the app starts.\n\nDue to an ESP32 ROM bug, UART2 is not supported for console output\nvia esp_rom_printf.",
                         "id": "component-config-common-esp-related-uart-peripheral-to-use-for-console-output-0-1-",
                         "name": "ESP_CONSOLE_UART_NUM",
@@ -9242,6 +10689,16 @@
                         "range": null,
                         "title": null,
                         "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": null,
+                        "id": "ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY",
+                        "name": "ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY",
+                        "range": null,
+                        "title": null,
+                        "type": "bool"
                     }
                 ],
                 "depends_on": null,
@@ -9382,6 +10839,16 @@
                                 "range": null,
                                 "title": "Amount of Ethernet DMA Tx buffers",
                                 "type": "int"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "ETH_DMA_RX_BUFFER_NUM > 15 && ETH_USE_ESP32_EMAC",
+                                "help": "Ethernet MAC engine on ESP32 doesn't feature a flow control logic.\nThe MAC driver can perform a software flow control if you enable this option.\nNote that, if the RX buffer number is small, enabling software flow control will\ncause obvious performance loss.",
+                                "id": "ETH_SOFT_FLOW_CONTROL",
+                                "name": "ETH_SOFT_FLOW_CONTROL",
+                                "range": null,
+                                "title": "Enable software flow control",
+                                "type": "bool"
                             }
                         ],
                         "depends_on": "IDF_TARGET_ESP32",
@@ -9786,6 +11253,36 @@
                         "range": null,
                         "title": "Support for power management",
                         "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "FREERTOS_USE_TICKLESS_IDLE",
+                        "help": "If enabled, about 1.8KB of lightsleep related source code would be in IRAM and chip would sleep\nlonger for 760us at most each time.\nThis feature is intended to be used when lower power consumption is needed\nwhile there is enough place in IRAM to place source code.",
+                        "id": "PM_SLP_IRAM_OPT",
+                        "name": "PM_SLP_IRAM_OPT",
+                        "range": null,
+                        "title": "Put lightsleep related codes in internal RAM",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "FREERTOS_USE_TICKLESS_IDLE",
+                        "help": "If enabled, about 260B of RTOS_IDLE related source code would be in IRAM and chip would sleep\nlonger for 40us at most each time.\nThis feature is intended to be used when lower power consumption is needed\nwhile there is enough place in IRAM to place source code.",
+                        "id": "PM_RTOS_IDLE_OPT",
+                        "name": "PM_RTOS_IDLE_OPT",
+                        "range": null,
+                        "title": "Put RTOS IDLE related codes in internal RAM",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "FREERTOS_USE_TICKLESS_IDLE",
+                        "help": "This feature is intended to disable all GPIO pins at automantic sleep to get a lower power mode.\nIf enabled, chips will disable all GPIO pins at automantic sleep to reduce about 200~300 uA current.\nIf you want to specifically use some pins normally as chip wakes when chip sleeps,\nyou can call 'gpio_sleep_sel_dis' to disable this feature on those pins.\nYou can also keep this feature on and call 'gpio_sleep_set_direction' and 'gpio_sleep_set_pull_mode'\nto have a different GPIO configuration at sleep.\nWaring: If you want to enable this option on ESP32, you should enable `GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL`\nat first, otherwise you will not be able to switch pullup/pulldown mode.",
+                        "id": "PM_SLP_DISABLE_GPIO",
+                        "name": "PM_SLP_DISABLE_GPIO",
+                        "range": null,
+                        "title": "Disable all GPIO when chip at sleep",
+                        "type": "bool"
                     }
                 ],
                 "depends_on": null,
@@ -9874,6 +11371,75 @@
                         "range": null,
                         "title": "Bootstrap cycles for external 32kHz crystal",
                         "type": "int"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": null,
+                        "id": "ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK",
+                        "name": "ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK",
+                        "range": null,
+                        "title": null,
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK",
+                        "help": "This config option allows to add RTC fast memory region to system heap with capability\nsimilar to that of DRAM region but without DMA. This memory will be consumed first per\nheap initialization order by early startup services and scheduler related code. Speed\nwise RTC fast memory operates on APB clock and hence does not have much performance impact.",
+                        "id": "ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP",
+                        "name": "ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP",
+                        "range": null,
+                        "title": "Enable RTC fast memory for dynamic allocations",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "!SPIRAM",
+                        "help": "If enabled, chip will try to power down flash at light sleep, which costs more time when chip wakes up.\nOnly can be enabled if there is no SPIRAM configured.",
+                        "id": "ESP_SYSTEM_PD_FLASH",
+                        "name": "ESP_SYSTEM_PD_FLASH",
+                        "range": null,
+                        "title": "PD flash at light sleep when there is no SPIRAM",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "IDF_TARGET_ESP32C3",
+                        "help": "If enabled, the CPU will be powered down in light sleep. Enabling this option will consume\n1.68 KB of internal RAM and will reduce sleep current consumption by about 100 uA.",
+                        "id": "ESP_SYSTEM_PM_POWER_DOWN_CPU",
+                        "name": "ESP_SYSTEM_PM_POWER_DOWN_CPU",
+                        "range": null,
+                        "title": "Power down CPU in light sleep",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "ESP_SYSTEM_MEMPROT_FEATURE",
+                                        "help": "Once locked, memory protection settings cannot be changed anymore.\nThe lock is reset only on the chip startup.",
+                                        "id": "ESP_SYSTEM_MEMPROT_FEATURE_LOCK",
+                                        "name": "ESP_SYSTEM_MEMPROT_FEATURE_LOCK",
+                                        "range": null,
+                                        "title": "Lock memory protection settings",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": "IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S2",
+                                "help": "If enabled, the permission control module watches all the memory access and fires the panic handler\nif a permission violation is detected. This feature automatically splits\nthe SRAM memory into data and instruction segments and sets Read/Execute permissions\nfor the instruction part (below given splitting address) and Read/Write permissions\nfor the data part (above the splitting address). The memory protection is effective\non all access through the IRAM0 and DRAM0 buses.",
+                                "id": "ESP_SYSTEM_MEMPROT_FEATURE",
+                                "name": "ESP_SYSTEM_MEMPROT_FEATURE",
+                                "range": null,
+                                "title": "Enable memory protection",
+                                "type": "bool"
+                            }
+                        ],
+                        "depends_on": null,
+                        "id": "component-config-esp-system-settings-memory-protection",
+                        "title": "Memory protection",
+                        "type": "menu"
                     }
                 ],
                 "depends_on": null,
@@ -10153,6 +11719,16 @@
                     },
                     {
                         "children": [],
+                        "depends_on": "ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT || ESP32S3_SPIRAM_SUPPORT",
+                        "help": "Select this option to enable AMSDU TX feature",
+                        "id": "ESP32_WIFI_AMSDU_TX_ENABLED",
+                        "name": "ESP32_WIFI_AMSDU_TX_ENABLED",
+                        "range": null,
+                        "title": "WiFi AMSDU TX",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
                         "depends_on": null,
                         "help": "Select this option to enable WiFi NVS flash",
                         "id": "ESP32_WIFI_NVS_ENABLED",
@@ -10398,6 +11974,88 @@
                         "range": null,
                         "title": "Enable WPA3-Personal",
                         "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": "Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.\nSome functions can be put in IRAM either by ESP32_WIFI_IRAM_OPT and ESP32_WIFI_RX_IRAM_OPT, or this one.\nIf already enabled ESP32_WIFI_IRAM_OPT, the other 7.3KB IRAM memory would be taken by this option.\nIf already enabled ESP32_WIFI_RX_IRAM_OPT, the other 1.3KB IRAM memory would be taken by this option.\nIf neither of them are enabled, the other 7.4KB IRAM memory would be taken by this option.\nWi-Fi power-save mode average current would be reduced if this option is enabled.",
+                        "id": "ESP_WIFI_SLP_IRAM_OPT",
+                        "name": "ESP_WIFI_SLP_IRAM_OPT",
+                        "range": null,
+                        "title": "WiFi SLP IRAM speed optimization",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "depends_on": "ESP_WIFI_FTM_REPORT_LOG_ENABLE",
+                                        "help": null,
+                                        "id": "ESP_WIFI_FTM_REPORT_SHOW_RTT",
+                                        "name": "ESP_WIFI_FTM_REPORT_SHOW_RTT",
+                                        "range": null,
+                                        "title": "Show RTT values",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "ESP_WIFI_FTM_REPORT_LOG_ENABLE",
+                                        "help": null,
+                                        "id": "ESP_WIFI_FTM_REPORT_SHOW_DIAG",
+                                        "name": "ESP_WIFI_FTM_REPORT_SHOW_DIAG",
+                                        "range": null,
+                                        "title": "Show dialog tokens",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "ESP_WIFI_FTM_REPORT_LOG_ENABLE",
+                                        "help": null,
+                                        "id": "ESP_WIFI_FTM_REPORT_SHOW_T1T2T3T4",
+                                        "name": "ESP_WIFI_FTM_REPORT_SHOW_T1T2T3T4",
+                                        "range": null,
+                                        "title": "Show T1 to T4",
+                                        "type": "bool"
+                                    },
+                                    {
+                                        "children": [],
+                                        "depends_on": "ESP_WIFI_FTM_REPORT_LOG_ENABLE",
+                                        "help": null,
+                                        "id": "ESP_WIFI_FTM_REPORT_SHOW_RSSI",
+                                        "name": "ESP_WIFI_FTM_REPORT_SHOW_RSSI",
+                                        "range": null,
+                                        "title": "Show RSSI levels",
+                                        "type": "bool"
+                                    }
+                                ],
+                                "depends_on": "ESP_WIFI_FTM_INITIATOR_SUPPORT",
+                                "help": "Select this option to get a detailed report of FTM Procedure with raw values",
+                                "id": "ESP_WIFI_FTM_REPORT_LOG_ENABLE",
+                                "name": "ESP_WIFI_FTM_REPORT_LOG_ENABLE",
+                                "range": null,
+                                "title": "FTM Report logging",
+                                "type": "bool"
+                            }
+                        ],
+                        "depends_on": "IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3",
+                        "help": null,
+                        "id": "ESP_WIFI_FTM_INITIATOR_SUPPORT",
+                        "name": "ESP_WIFI_FTM_INITIATOR_SUPPORT",
+                        "range": null,
+                        "title": "FTM Initiator support",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3",
+                        "help": null,
+                        "id": "ESP_WIFI_FTM_RESPONDER_SUPPORT",
+                        "name": "ESP_WIFI_FTM_RESPONDER_SUPPORT",
+                        "range": null,
+                        "title": "FTM Responder support",
+                        "type": "bool"
                     }
                 ],
                 "depends_on": null,
@@ -10472,6 +12130,16 @@
                         "range": null,
                         "title": null,
                         "type": "int"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "IDF_TARGET_ESP32C3 && FREERTOS_USE_TICKLESS_IDLE",
+                        "help": "If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered\ndown when PHY is disabled. Enabling this setting reduces power consumption\nby a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),\n2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).",
+                        "id": "ESP32_PHY_MAC_BB_PD",
+                        "name": "ESP32_PHY_MAC_BB_PD",
+                        "range": null,
+                        "title": "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled",
+                        "type": "bool"
                     }
                 ],
                 "depends_on": null,
@@ -11501,7 +13169,7 @@
                     {
                         "children": [],
                         "depends_on": null,
-                        "help": "FreeRTOS can check if a stack has overflown its bounds by checking either the value of\nthe stack pointer or by checking the integrity of canary bytes. (See FREERTOS_CHECK_STACKOVERFLOW\nfor more information.) These checks only happen on a context switch, and the situation that caused\nthe stack overflow may already be long gone by then. This option will use the debug memory\nwatchpoint 1 (the second one) to allow breaking into the debugger (or panic'ing) as soon as any\nof the last 32 bytes on the stack of a task are overwritten. The side effect is that using gdb, you\neffectively only have one watchpoint; the 2nd one is overwritten as soon as a task switch happens.\n\nThis check only triggers if the stack overflow writes within 4 bytes of the end of the stack, rather than\novershooting further, so it is worth combining this approach with one of the other stack overflow check\nmethods.\n\nWhen this watchpoint is hit, gdb will stop with a SIGTRAP message. When no JTAG OCD is attached, esp-idf\nwill panic on an unhandled debug exception.",
+                        "help": "FreeRTOS can check if a stack has overflown its bounds by checking either the value of\nthe stack pointer or by checking the integrity of canary bytes. (See FREERTOS_CHECK_STACKOVERFLOW\nfor more information.) These checks only happen on a context switch, and the situation that caused\nthe stack overflow may already be long gone by then. This option will use the last debug memory\nwatchpoint to allow breaking into the debugger (or panic'ing) as soon as any\nof the last 32 bytes on the stack of a task are overwritten. The side effect is that using gdb, you\neffectively have one hardware watchpoint less because the last one is overwritten as soon as a task\nswitch happens.\n\nAnother consequence is that due to alignment requirements of the watchpoint, the usable stack size\ndecreases by up to 60 bytes. This is because the watchpoint region has to be aligned to its size and the\nsize for the stack watchpoint in IDF is 32 bytes.\n\nThis check only triggers if the stack overflow writes within 32 bytes near the end of the stack, rather\nthan overshooting further, so it is worth combining this approach with one of the other stack overflow\ncheck methods.\n\nWhen this watchpoint is hit, gdb will stop with a SIGTRAP message. When no JTAG OCD is attached, esp-idf\nwill panic on an unhandled debug exception.",
                         "id": "FREERTOS_WATCHPOINT_END_OF_STACK",
                         "name": "FREERTOS_WATCHPOINT_END_OF_STACK",
                         "range": null,
@@ -11621,24 +13289,23 @@
                         "type": "int"
                     },
                     {
-                        "children": [
-                            {
-                                "children": [],
-                                "depends_on": "FREERTOS_SUPPORT_STATIC_ALLOCATION",
-                                "help": "Enable this option to make FreeRTOS call the static task clean up hook when a task is deleted.\n\nBear in mind that if this option is enabled you will need to implement the following function::\n\n    void vPortCleanUpTCB ( void *pxTCB ) {\n        // place clean up code here\n    }",
-                                "id": "FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP",
-                                "name": "FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP",
-                                "range": null,
-                                "title": "Enable static task clean up hook",
-                                "type": "bool"
-                            }
-                        ],
+                        "children": [],
                         "depends_on": null,
-                        "help": "FreeRTOS gives the application writer the ability to instead provide the memory\nthemselves, allowing the following objects to optionally be created without any\nmemory being allocated dynamically:\n\n- Tasks\n- Software Timers (Daemon task is still dynamic. See documentation)\n- Queues\n- Event Groups\n- Binary Semaphores\n- Counting Semaphores\n- Recursive Semaphores\n- Mutexes\n\nWhether it is preferable to use static or dynamic memory allocation is dependent on\nthe application, and the preference of the application writer. Both methods have pros\nand cons, and both methods can be used within the same RTOS application.\n\nCreating RTOS objects using statically allocated RAM has the benefit of providing the application writer\nwith more control: RTOS objects can be placed at specific memory locations. The maximum RAM footprint can\nbe determined at link time, rather than run time. The application writer does not need to concern\nthemselves with graceful handling of memory allocation failures. It allows the RTOS to be used in\napplications that simply don't allow any dynamic memory allocation (although FreeRTOS includes allocation\nschemes that can overcome most objections).",
+                        "help": null,
                         "id": "FREERTOS_SUPPORT_STATIC_ALLOCATION",
                         "name": "FREERTOS_SUPPORT_STATIC_ALLOCATION",
                         "range": null,
-                        "title": "Enable FreeRTOS static allocation API",
+                        "title": null,
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": "Enable this option to make FreeRTOS call the static task clean up hook when a task is deleted.\n\nBear in mind that if this option is enabled you will need to implement the following function::\n\n    void vPortCleanUpTCB ( void *pxTCB ) {\n        // place clean up code here\n    }",
+                        "id": "FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP",
+                        "name": "FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP",
+                        "range": null,
+                        "title": "Enable static task clean up hook",
                         "type": "bool"
                     },
                     {
@@ -12805,6 +14472,44 @@
                         "type": "menu"
                     },
                     {
+                        "children": [
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "Enable checksum checking for received IP messages",
+                                "id": "LWIP_CHECKSUM_CHECK_IP",
+                                "name": "LWIP_CHECKSUM_CHECK_IP",
+                                "range": null,
+                                "title": "Enable LWIP IP checksums",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "Enable checksum checking for received UDP messages",
+                                "id": "LWIP_CHECKSUM_CHECK_UDP",
+                                "name": "LWIP_CHECKSUM_CHECK_UDP",
+                                "range": null,
+                                "title": "Enable LWIP UDP checksums",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": "Enable checksum checking for received ICMP messages",
+                                "id": "LWIP_CHECKSUM_CHECK_ICMP",
+                                "name": "LWIP_CHECKSUM_CHECK_ICMP",
+                                "range": null,
+                                "title": "Enable LWIP ICMP checksums",
+                                "type": "bool"
+                            }
+                        ],
+                        "depends_on": null,
+                        "id": "component-config-lwip-checksums",
+                        "title": "Checksums",
+                        "type": "menu"
+                    },
+                    {
                         "children": [],
                         "depends_on": null,
                         "help": "Configure TCP/IP task stack size, used by LWIP to process multi-threaded TCP/IP operations.\nSetting this stack too small will result in stack overflow crashes.",
@@ -13294,6 +14999,26 @@
                                 "children": [],
                                 "depends_on": null,
                                 "help": null,
+                                "id": "LWIP_DHCP_STATE_DEBUG",
+                                "name": "LWIP_DHCP_STATE_DEBUG",
+                                "range": null,
+                                "title": "Enable DHCP state tracking",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "LWIP_DHCP_DEBUG",
+                                "name": "LWIP_DHCP_DEBUG",
+                                "range": null,
+                                "title": "Enable DHCP debug messages",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
                                 "id": "LWIP_IP6_DEBUG",
                                 "name": "LWIP_IP6_DEBUG",
                                 "range": null,
@@ -13308,6 +15033,16 @@
                                 "name": "LWIP_ICMP6_DEBUG",
                                 "range": null,
                                 "title": "Enable ICMP6 debug messages",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": null,
+                                "help": null,
+                                "id": "LWIP_TCP_DEBUG",
+                                "name": "LWIP_TCP_DEBUG",
+                                "range": null,
+                                "title": "Enable TCP debug messages",
                                 "type": "bool"
                             }
                         ],
@@ -13709,7 +15444,7 @@
                             {
                                 "children": [],
                                 "depends_on": "MBEDTLS_HAVE_TIME",
-                                "help": "System has time.h and time(), gmtime() and the clock is correct.\nThe time needs to be correct (not necesarily very accurate, but at least\nthe date should be correct). This is used to verify the validity period of\nX.509 certificates.\n\nIt is suggested that you should get the real time by \"SNTP\".",
+                                "help": "Enables X.509 certificate expiry checks in mbedTLS.\n\nIf this option is disabled (default) then X.509 certificate\n\"valid from\" and \"valid to\" timestamp fields are ignored.\n\nIf this option is enabled, these fields are compared with the\ncurrent system date and time. The time is retrieved using the\nstandard time() and gmtime() functions. If the certificate is not\nvalid for the current system time then verification will fail with\ncode MBEDTLS_X509_BADCERT_FUTURE or MBEDTLS_X509_BADCERT_EXPIRED.\n\nEnabling this option requires adding functionality in the firmware\nto set the system clock to a valid timestamp before using TLS. The\nrecommended way to do this is via ESP-IDF's SNTP functionality, but\nany method can be used.\n\nIn the case where only a small number of certificates are trusted by\nthe device, please carefully consider the tradeoffs of enabling this\noption. There may be undesired consequences, for example if all\ntrusted certificates expire while the device is offline and a TLS\nconnection is required to update. Or if an issue with the SNTP\nserver means that the system time is invalid for an extended period\nafter a reset.",
                                 "id": "MBEDTLS_HAVE_TIME_DATE",
                                 "name": "MBEDTLS_HAVE_TIME_DATE",
                                 "range": null,
@@ -13718,11 +15453,11 @@
                             }
                         ],
                         "depends_on": "!ESP_TIME_FUNCS_USE_NONE",
-                        "help": "System has time.h and time().\nThe time does not need to be correct, only time differences are used.",
+                        "help": "Enable use of time.h functions (time() and gmtime()) by mbedTLS.\n\nThis option doesn't require the system time to be correct, but enables\nfunctionality that requires relative timekeeping - for example periodic\nexpiry of TLS session tickets or session cache entries.\n\nDisabling this option will save some firmware size, particularly if\nthe rest of the firmware doesn't call any standard timekeeeping\nfunctions.",
                         "id": "MBEDTLS_HAVE_TIME",
                         "name": "MBEDTLS_HAVE_TIME",
                         "range": null,
-                        "title": "Enable mbedtls time",
+                        "title": "Enable mbedtls time support",
                         "type": "bool"
                     },
                     {
@@ -14477,6 +16212,16 @@
                         "type": "bool"
                     },
                     {
+                        "children": [],
+                        "depends_on": "MBEDTLS_HARDWARE_MPI",
+                        "help": "Fallback to software implementation for RSA key lengths\nlarger than SOC_RSA_MAX_BIT_LEN. If this is not active\nthen the ESP will be unable to process keys greater\nthan SOC_RSA_MAX_BIT_LEN.",
+                        "id": "MBEDTLS_LARGE_KEY_SOFTWARE_MPI",
+                        "name": "MBEDTLS_LARGE_KEY_SOFTWARE_MPI",
+                        "range": null,
+                        "title": "Fallback to software implementation for larger MPI values",
+                        "type": "bool"
+                    },
+                    {
                         "children": [
                             {
                                 "children": [],
@@ -14665,6 +16410,36 @@
                         "name": "MQTT_TRANSPORT_WEBSOCKET",
                         "range": null,
                         "title": "Enable MQTT over Websocket",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": "Set this to true for the message id (2.3.1 Packet Identifier) to be generated\nas an incremental number rather then a random value (used by default)",
+                        "id": "MQTT_MSG_ID_INCREMENTAL",
+                        "name": "MQTT_MSG_ID_INCREMENTAL",
+                        "range": null,
+                        "title": "Use Incremental Message Id",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": "Set this to true to avoid publishing (enqueueing messages) if the client is disconnected.\nThe MQTT client tries to publish all messages by default, even in the disconnected state\n(where the qos1 and qos2 packets are stored in the internal outbox to be published later)\nThe MQTT_SKIP_PUBLISH_IF_DISCONNECTED option allows applications to override this behaviour\nand not enqueue publish packets in the disconnected state.",
+                        "id": "MQTT_SKIP_PUBLISH_IF_DISCONNECTED",
+                        "name": "MQTT_SKIP_PUBLISH_IF_DISCONNECTED",
+                        "range": null,
+                        "title": "Skip publish if disconnected",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": "Set this to true to post events for all messages which were deleted from the outbox\nbefore being correctly sent and confirmed.",
+                        "id": "MQTT_REPORT_DELETED_MESSAGES",
+                        "name": "MQTT_REPORT_DELETED_MESSAGES",
+                        "range": null,
+                        "title": "Report deleted messages",
                         "type": "bool"
                     },
                     {
@@ -15204,6 +16979,16 @@
                         "type": "bool"
                     },
                     {
+                        "children": [],
+                        "depends_on": "IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3",
+                        "help": "Enable this flag to use new SPI flash driver functions from ROM instead of ESP-IDF.\n\nIf keeping this as \"n\" in your project, you will have less free IRAM.\nBut you can use all of our flash features.\n\nIf making this as \"y\" in your project, you will increase free IRAM.\nBut you may miss out on some flash features and support for new flash chips.",
+                        "id": "SPI_FLASH_ROM_IMPL",
+                        "name": "SPI_FLASH_ROM_IMPL",
+                        "range": null,
+                        "title": "Use esp_flash implementation in ROM",
+                        "type": "bool"
+                    },
+                    {
                         "children": [
                             {
                                 "children": [],
@@ -15292,7 +17077,7 @@
                                 "id": "SPI_FLASH_ERASE_YIELD_TICKS",
                                 "name": "SPI_FLASH_ERASE_YIELD_TICKS",
                                 "range": null,
-                                "title": "CPU release time (tick)",
+                                "title": "CPU release time (tick) for an erase operation",
                                 "type": "int"
                             }
                         ],
@@ -15302,6 +17087,16 @@
                         "name": "SPI_FLASH_YIELD_DURING_ERASE",
                         "range": null,
                         "title": "Enables yield operation during flash erase",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": "IDF_TARGET_ESP32C3 && !SPI_FLASH_USE_LEGACY_IMPL && !SPI_FLASH_ROM_IMPL",
+                        "help": "This is made default n, because this needs bootloader support.\nThis feature needs special bootloader support.\nIf you want to OTA to a image with this feature\n(e.g. turn on this config option for OTA image), please make\nsure the bootloader has the support for it. (above IDF v4.3)",
+                        "id": "SPI_FLASH_AUTO_SUSPEND",
+                        "name": "SPI_FLASH_AUTO_SUSPEND",
+                        "range": null,
+                        "title": "Auto suspend long erase/write operations",
                         "type": "bool"
                     },
                     {
@@ -15378,12 +17173,32 @@
                                 "range": null,
                                 "title": "Winbond",
                                 "type": "bool"
+                            },
+                            {
+                                "children": [],
+                                "depends_on": "!IDF_TARGET_ESP32",
+                                "help": "Enable this to support auto detection of BOYA chips if chip vendor not directly\ngiven by ``chip_drv`` member of the chip struct. This adds support for variant\nchips, however will extend detecting time.",
+                                "id": "SPI_FLASH_SUPPORT_BOYA_CHIP",
+                                "name": "SPI_FLASH_SUPPORT_BOYA_CHIP",
+                                "range": null,
+                                "title": "BOYA",
+                                "type": "bool"
                             }
                         ],
                         "depends_on": null,
                         "id": "component-config-spi-flash-driver-auto-detect-flash-chips",
                         "title": "Auto-detect flash chips",
                         "type": "menu"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": "This option enables flash read/write operations to encrypted partition/s. This option\nis kept enabled irrespective of state of flash encryption feature. However, in case\napplication is not using flash encryption feature and is in need of some additional\nmemory from IRAM region (~1KB) then this config can be disabled.",
+                        "id": "SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE",
+                        "name": "SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE",
+                        "range": null,
+                        "title": "Enable encrypted partition read/write operations",
+                        "type": "bool"
                     }
                 ],
                 "depends_on": null,
@@ -15811,6 +17626,27 @@
                                 "children": [
                                     {
                                         "children": [],
+                                        "depends_on": "USB_MSC_ENABLED",
+                                        "help": "MSC FIFO size",
+                                        "id": "USB_MSC_BUFSIZE",
+                                        "name": "USB_MSC_BUFSIZE",
+                                        "range": null,
+                                        "title": "MSC FIFO size",
+                                        "type": "int"
+                                    }
+                                ],
+                                "depends_on": "USB_ENABLED",
+                                "help": "Enable USB MSC TinyUSB driver.",
+                                "id": "USB_MSC_ENABLED",
+                                "name": "USB_MSC_ENABLED",
+                                "range": null,
+                                "title": "Enable USB MSC TinyUSB driver",
+                                "type": "bool"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
                                         "depends_on": "USB_CDC_ENABLED",
                                         "help": "CDC FIFO size of RX",
                                         "id": "USB_CDC_RX_BUFSIZE",
@@ -16154,6 +17990,16 @@
                         "name": "WPA_MBEDTLS_CRYPTO",
                         "range": null,
                         "title": "Use MbedTLS crypto API's",
+                        "type": "bool"
+                    },
+                    {
+                        "children": [],
+                        "depends_on": null,
+                        "help": "Select this option to enable WAPI-PSK\nwhich is a Chinese National Standard Encryption for Wireless LANs (GB 15629.11-2003).",
+                        "id": "WPA_WAPI_PSK",
+                        "name": "WPA_WAPI_PSK",
+                        "range": null,
+                        "title": "Enable WAPI PSK support",
                         "type": "bool"
                     },
                     {

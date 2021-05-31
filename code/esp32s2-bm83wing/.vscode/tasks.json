@@ -20,7 +20,7 @@
         {
             "label": "Flash",
             "type": "shell",
-            "command": "source $HOME/esp/esp-idf/export.sh && idf.py -p /dev/ttyACM0 flash",
+            "command": "source $HOME/esp/esp-idf/export.sh && idf.py -p /dev/ttyACM1 flash",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -34,7 +34,7 @@
         {
             "label": "Monitor",
             "type": "shell",
-            "command": "source $HOME/esp/esp-idf/export.sh && idf.py -p /dev/ttyACM0 monitor",
+            "command": "source $HOME/esp/esp-idf/export.sh && idf.py -p /dev/ttyACM1 monitor",
             "group": {
                 "kind": "build",
                 "isDefault": true
