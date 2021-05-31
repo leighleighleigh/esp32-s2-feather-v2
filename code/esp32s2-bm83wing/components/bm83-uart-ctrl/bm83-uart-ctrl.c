@@ -186,7 +186,7 @@ static esp_err_t bm83_parse(bm83_runtime_t *bm83_hdl, size_t len)
     uint8_t opCode = bm83_hdl->buffer[3];
 
     cmd_ack_t *ack_msg = calloc(1,sizeof(cmd_ack_t));
-    le_signal_evt_t *le_signal_evt = calloc(1,sizeof(le_signal_evt_t));
+    event_btm_status_t *event_btm_status = calloc(1,sizeof(event_btm_status_t));
 
     switch(opCode)
     {
@@ -196,16 +196,51 @@ static esp_err_t bm83_parse(bm83_runtime_t *bm83_hdl, size_t len)
             esp_event_post_to(bm83_hdl->event_loop_hdl, ESP_BM83_EVENT, CMD_ACK, ack_msg, sizeof(cmd_ack_t), 100 / portTICK_PERIOD_MS);
             return ESP_OK;
 
-        case 0x32: /* LE Signalling */
-            le_signal_evt->sub_evt = bm83_hdl->buffer[4];
-            le_signal_evt->payload_len = 0;
-            for(int i = 6; i<len-1; i++)
+        case 0x1: /* BTM Event */
+            event_btm_status->state = bm83_hdl->buffer[4];
+            // Post state update
+            esp_event_post_to(bm83_hdl->event_loop_hdl, ESP_BM83_EVENT, EVENT_BTM_STATUS, event_btm_status, sizeof(event_btm_status_t), 100 / portTICK_PERIOD_MS);
+            
+            // Update global state object
+            switch(event_btm_status->state)
             {
-                le_signal_evt->payload[i] = bm83_hdl->buffer[i];
-                le_signal_evt->payload_len++;
+                case 0x0:
+                    bm83_hdl->parent.btm_power = false;
+                    break;
+                case 0x2:
+                    bm83_hdl->parent.btm_power = true;
+                    break;
+                case 0x6:
+                    // ESP_LOGI(TAG,"A2DP LINK ESTABLISHED");
+                    bm83_hdl->parent.a2dp_link = true;
+                    break;
+                case 0x8:
+                    // ESP_LOGI(TAG,"A2DP LINK DISCONNECTED");
+                    bm83_hdl->parent.a2dp_link = false;
+                    break;
+                case 0xB:
+                    // ESP_LOGI(TAG,"AVRCP LINK ESTABLISHED");
+                    bm83_hdl->parent.avrcp_link = true;
+                    break;
+                case 0xC:
+                    // ESP_LOGI(TAG,"AVRCP LINK DISCONNECTED");
+                    bm83_hdl->parent.avrcp_link = false;
+                    break;
+                case 0x11:
+                    // ESP_LOGI(TAG,"ACL DISCONNECTED");
+                    bm83_hdl->parent.acl_link = false;
+                    break;
+                case 0x15:
+                    // ESP_LOGI(TAG,"ACL CONNECTED");
+                    bm83_hdl->parent.acl_link = true;
+                    break;
+            
             }
-            esp_event_post_to(bm83_hdl->event_loop_hdl, ESP_BM83_EVENT, LE_SIGNAL_EVT, le_signal_evt, sizeof(le_signal_evt_t), 100 / portTICK_PERIOD_MS);
+
+            // Send state object
+            esp_event_post_to(bm83_hdl->event_loop_hdl, ESP_BM83_EVENT, BTM_STATE_OBJECT, &(bm83_hdl->parent), sizeof(bm83_state_t), 500 / portTICK_PERIOD_MS);
             return ESP_OK;
+
         default:
             return ESP_FAIL;
     }

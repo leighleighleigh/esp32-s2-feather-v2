@@ -28,8 +28,10 @@ typedef void *bm83_parser_handle_t;
  *
  */
 typedef struct {
-    bool alive;
-    bool a2dp;
+    bool btm_power;
+    bool acl_link;
+    bool a2dp_link;
+    bool avrcp_link;
 } bm83_state_t;
 
 /**

@@ -83,38 +83,104 @@ static void bm83_event_handler(void *event_handler_arg, esp_event_base_t event_b
 {
     bm83_state_t *bm83_state = NULL;
     cmd_ack_t *ack_msg = NULL;
-    le_signal_evt_t *le_signal_evt_msg = NULL;
+    event_btm_status_t *event_btm_status = NULL;
 
     switch(event_id){
+        case BTM_STATE_OBJECT:
+            bm83_state = (bm83_state_t *)event_data;
+            ESP_LOGI(TAG,"~~~ BM83 STATE OBJECT! ~~~");
+            ESP_LOGI(TAG,"POWER %s",bm83_state->btm_power ? "ON" : "OFF");
+            ESP_LOGI(TAG,"ACL %s",bm83_state->acl_link ? "ON" : "OFF");
+            ESP_LOGI(TAG,"A2DP %s",bm83_state->a2dp_link ? "ON" : "OFF");
+            ESP_LOGI(TAG,"AVRCP %s",bm83_state->avrcp_link ? "ON" : "OFF");
+            ESP_LOGI(TAG,"~~~~~~~~~~~~~~~~~~~~~~~~~~");
+            break;
+
         case CMD_ACK:
             ack_msg = (cmd_ack_t *)event_data;
             ESP_LOGI(TAG,"GOT ACK, CMD=0x%X, STAT=0x%X",ack_msg->command_id,ack_msg->status);
             break;
-        case LE_SIGNAL_EVT:
-            le_signal_evt_msg = (le_signal_evt_t *)event_data;
-            switch(le_signal_evt_msg->sub_evt)
+        
+        case EVENT_BTM_STATUS:
+            event_btm_status = (event_btm_status_t *)event_data;
+            ESP_LOGI(TAG,"EVT BTM_STATUS, STATE=0x%X",event_btm_status->state);
+            switch(event_btm_status->state)
             {
                 case 0x0:
-                    ESP_LOGI(TAG,"GOT LE SIGNAL EVENT, SUBTYPE=0x%X, CONN=0x%X, GATT=0x%X",le_signal_evt_msg->sub_evt,le_signal_evt_msg->payload[0],le_signal_evt_msg->payload[1]);
+                    ESP_LOGI(TAG,"POWER OFF");
                     break;
                 case 0x1:
-                    ESP_LOGI(TAG,"GOT LE SIGNAL EVENT, SUBTYPE=0x%X, ADVCTL=0x%X",le_signal_evt_msg->sub_evt,le_signal_evt_msg->payload[0]);
+                    ESP_LOGI(TAG,"PAIRING STATE (discoverable)");
                     break;
                 case 0x2:
-                    ESP_LOGI(TAG,"GOT LE SIGNAL EVENT, SUBTYPE=0x%X, CONINT=0x%X, CONLAT=0x%X, SUPTIM=0x%X", le_signal_evt_msg->sub_evt, \
-                                le_signal_evt_msg->payload[0] << 8 | le_signal_evt_msg->payload[1], \
-                                le_signal_evt_msg->payload[2] << 8 | le_signal_evt_msg->payload[3], \
-                                le_signal_evt_msg->payload[4] << 8 | le_signal_evt_msg->payload[5]);
+                    ESP_LOGI(TAG,"POWER ON");
                     break;
                 case 0x3:
-                    ESP_LOGI(TAG,"GOT LE SIGNAL EVENT, SUBTYPE=0x%X, CONPARAM=0x%X", le_signal_evt_msg->sub_evt, \
-                                    le_signal_evt_msg->payload[0] << 8 | le_signal_evt_msg->payload[1]);
+                    ESP_LOGI(TAG,"PAIRING SUCCESS");
+                    break;
+                case 0x4:
+                    ESP_LOGI(TAG,"PAIRING FAIL");
+                    break;
+                case 0x5:
+                    ESP_LOGI(TAG,"HF/HS LINK ESTABLISHED");
+                    break;
+                case 0x6:
+                    ESP_LOGI(TAG,"A2DP LINK ESTABLISHED");
+                    break;
+                case 0x7:
+                    ESP_LOGI(TAG,"HF LINK DISCONNECTED");
+                    break;
+                case 0x8:
+                    ESP_LOGI(TAG,"A2DP LINK DISCONNECTED");
+                    break;
+                case 0x9:
+                    ESP_LOGI(TAG,"SCO LINK CONNECTED");
+                    break;
+                case 0xA:
+                    ESP_LOGI(TAG,"SCO LINK DISCONNECTED");    
+                    break;
+                case 0xB:
+                    ESP_LOGI(TAG,"AVRCP LINK ESTABLISHED");
+                    break;
+                case 0xC:
+                    ESP_LOGI(TAG,"AVRCP LINK DISCONNECTED");
+                    break;
+                case 0xD:
+                    ESP_LOGI(TAG,"STANDARD SPP CONNECTED");
+                    break;
+                case 0xE:
+                    ESP_LOGI(TAG,"STANDARD SPP/iAP DISCONNECTED");
+                    break;
+                case 0xF:
+                    ESP_LOGI(TAG,"STANDBY STATE");
+                    break;
+                case 0x10:
+                    ESP_LOGI(TAG,"iAP CONNECTED");
+                    break;
+                case 0x11:
+                    ESP_LOGI(TAG,"ACL DISCONNECTED");
+                    break;
+                case 0x12:
+                    ESP_LOGI(TAG,"MAP CONNECTED");
+                    break;                
+                case 0x13:
+                    ESP_LOGI(TAG,"MAP OPERATION FORBIDDEN");
+                    break;
+                case 0x14:
+                    ESP_LOGI(TAG,"MAP DISCONNECTED");
+                    break;
+                case 0x15:
+                    ESP_LOGI(TAG,"ACL CONNECTED");
+                    break;
+                case 0x16:
+                    ESP_LOGI(TAG,"SPP / iAP DISCONN NO PROFILE");
                     break;
             }
             break;
+
         case CMD_UNKNOWN:
-            ESP_LOGW(TAG, "Unknown command.");
-            util_print_unknown_bm83_event(event_data);
+            // ESP_LOGW(TAG, "Unknown command.");
+            // util_print_unknown_bm83_event(event_data);
             break;
     }
     
