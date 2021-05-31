@@ -186,14 +186,25 @@ static esp_err_t bm83_parse(bm83_runtime_t *bm83_hdl, size_t len)
     uint8_t opCode = bm83_hdl->buffer[3];
 
     cmd_ack_t *ack_msg = calloc(1,sizeof(cmd_ack_t));
+    le_signal_evt_t *le_signal_evt = calloc(1,sizeof(le_signal_evt_t));
 
     switch(opCode)
     {
-        case 0x0:
-            // ack_msg = (cmd_ack_t)
+        case 0x0: /* ACK */
             ack_msg->command_id = bm83_hdl->buffer[4];
             ack_msg->status = bm83_hdl->buffer[5];
             esp_event_post_to(bm83_hdl->event_loop_hdl, ESP_BM83_EVENT, CMD_ACK, ack_msg, sizeof(cmd_ack_t), 100 / portTICK_PERIOD_MS);
+            return ESP_OK;
+
+        case 0x32: /* LE Signalling */
+            le_signal_evt->sub_evt = bm83_hdl->buffer[4];
+            le_signal_evt->payload_len = 0;
+            for(int i = 6; i<len-1; i++)
+            {
+                le_signal_evt->payload[i] = bm83_hdl->buffer[i];
+                le_signal_evt->payload_len++;
+            }
+            esp_event_post_to(bm83_hdl->event_loop_hdl, ESP_BM83_EVENT, LE_SIGNAL_EVT, le_signal_evt, sizeof(le_signal_evt_t), 100 / portTICK_PERIOD_MS);
             return ESP_OK;
         default:
             return ESP_FAIL;

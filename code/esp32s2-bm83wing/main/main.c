@@ -61,10 +61,10 @@ static void util_print_unknown_bm83_event(void *event_data)
     int16_t dlc = buffer[1] << 8 | buffer[2];
     
     printf("Unknown bytes [");
-    for(int i = 0; i<dlc+2; i++)
+    for(int i = 0; i<dlc+4; i++)
     {
         printf("0x%X",buffer[i]);
-        if(i != dlc+1){
+        if(i != dlc+3){
             printf(",");
         }
     }
@@ -83,13 +83,35 @@ static void bm83_event_handler(void *event_handler_arg, esp_event_base_t event_b
 {
     bm83_state_t *bm83_state = NULL;
     cmd_ack_t *ack_msg = NULL;
+    le_signal_evt_t *le_signal_evt_msg = NULL;
 
     switch(event_id){
         case CMD_ACK:
             ack_msg = (cmd_ack_t *)event_data;
             ESP_LOGI(TAG,"GOT ACK, CMD=0x%X, STAT=0x%X",ack_msg->command_id,ack_msg->status);
             break;
-
+        case LE_SIGNAL_EVT:
+            le_signal_evt_msg = (le_signal_evt_t *)event_data;
+            switch(le_signal_evt_msg->sub_evt)
+            {
+                case 0x0:
+                    ESP_LOGI(TAG,"GOT LE SIGNAL EVENT, SUBTYPE=0x%X, CONN=0x%X, GATT=0x%X",le_signal_evt_msg->sub_evt,le_signal_evt_msg->payload[0],le_signal_evt_msg->payload[1]);
+                    break;
+                case 0x1:
+                    ESP_LOGI(TAG,"GOT LE SIGNAL EVENT, SUBTYPE=0x%X, ADVCTL=0x%X",le_signal_evt_msg->sub_evt,le_signal_evt_msg->payload[0]);
+                    break;
+                case 0x2:
+                    ESP_LOGI(TAG,"GOT LE SIGNAL EVENT, SUBTYPE=0x%X, CONINT=0x%X, CONLAT=0x%X, SUPTIM=0x%X", le_signal_evt_msg->sub_evt, \
+                                le_signal_evt_msg->payload[0] << 8 | le_signal_evt_msg->payload[1], \
+                                le_signal_evt_msg->payload[2] << 8 | le_signal_evt_msg->payload[3], \
+                                le_signal_evt_msg->payload[4] << 8 | le_signal_evt_msg->payload[5]);
+                    break;
+                case 0x3:
+                    ESP_LOGI(TAG,"GOT LE SIGNAL EVENT, SUBTYPE=0x%X, CONPARAM=0x%X", le_signal_evt_msg->sub_evt, \
+                                    le_signal_evt_msg->payload[0] << 8 | le_signal_evt_msg->payload[1]);
+                    break;
+            }
+            break;
         case CMD_UNKNOWN:
             ESP_LOGW(TAG, "Unknown command.");
             util_print_unknown_bm83_event(event_data);
