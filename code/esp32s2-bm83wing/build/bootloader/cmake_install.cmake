@@ -32,9 +32,14 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
   set(CMAKE_CROSSCOMPILING "TRUE")
 endif()
 
+# Set default install directory permissions.
+if(NOT DEFINED CMAKE_OBJDUMP)
+  set(CMAKE_OBJDUMP "/home/leigh/.espressif/tools/xtensa-esp32s2-elf/esp-2020r3-8.4.0/xtensa-esp32s2-elf/bin/xtensa-esp32s2-elf-objdump")
+endif()
+
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing-autowing/build/bootloader/esp-idf/cmake_install.cmake")
+  include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/bootloader/esp-idf/cmake_install.cmake")
 
 endif()
 
@@ -46,5 +51,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing-autowing/build/bootloader/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/bootloader/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -1,4 +1,4 @@
-/* * Data converted from /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing-autowing/build/esp-idf/mbedtls/x509_crt_bundle
+/* * Data converted from /home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/esp32s2-bm83wing/build/esp-idf/mbedtls/x509_crt_bundle
  */
 .data
 .section .rodata.embedded

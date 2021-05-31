@@ -1,0 +1,24 @@
+menu "BM83 Parser Configuration"
+
+    config BM83_PARSER_RING_BUFFER_SIZE
+        int "BM83 Parser Ring Buffer Size"
+        range 0 2048
+        default 1024
+        help
+            Size of the ring buffer used for UART Rx channel.
+
+    config BM83_PARSER_TASK_STACK_SIZE
+        int "BM83 Parser Task Stack Size"
+        range 0 4096
+        default 2048
+        help
+            Stack size of BM83 Parser task.
+
+    config BM83_PARSER_TASK_PRIORITY
+        int "BM83 Parser Task Priority"
+        range 0 24
+        default 2
+        help
+            Priority of BM83 Parser task.
+
+endmenu
