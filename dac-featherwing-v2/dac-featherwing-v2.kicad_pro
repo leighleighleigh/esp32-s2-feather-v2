@@ -34,8 +34,8 @@
         "other_text_upright": false,
         "pads": {
           "drill": 2.7,
-          "height": 4.5,
-          "width": 4.5
+          "height": 4.7,
+          "width": 4.7
         },
         "silk_line_width": 0.12,
         "silk_text_italic": false,
@@ -111,10 +111,12 @@
         "min_through_hole_diameter": 0.3,
         "min_track_width": 0.19999999999999998,
         "min_via_annular_width": 0.049999999999999996,
-        "min_via_diameter": 0.39999999999999997
+        "min_via_diameter": 0.39999999999999997,
+        "use_height_for_length_calcs": true
       },
       "track_widths": [
-        0.0
+        0.0,
+        1.0
       ],
       "via_dimensions": [
         {
@@ -410,7 +412,8 @@
       "meta": {
         "version": 0
       },
-      "model_mode": 0
+      "model_mode": 0,
+      "workbook_filename": ""
     },
     "page_layout_descr_file": "",
     "plot_directory": "",
