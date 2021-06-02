@@ -84,8 +84,8 @@
         "padstack": "error",
         "pth_inside_courtyard": "ignore",
         "shorting_items": "error",
-        "silk_over_copper": "error",
-        "silk_overlap": "error",
+        "silk_over_copper": "warning",
+        "silk_overlap": "warning",
         "skew_out_of_range": "error",
         "too_many_vias": "error",
         "track_dangling": "warning",
@@ -116,6 +116,8 @@
       },
       "track_widths": [
         0.0,
+        0.3,
+        0.5,
         1.0
       ],
       "via_dimensions": [
