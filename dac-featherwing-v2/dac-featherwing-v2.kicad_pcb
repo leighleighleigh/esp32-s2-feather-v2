@@ -295,7 +295,7 @@
     (descr "Mounting Hole 2.7mm, no annular, M2.5, DIN965")
     (tags "mounting hole 2.7mm no annular m2.5 din965")
     (attr exclude_from_pos_files exclude_from_bom)
-    (fp_text reference "REF**" (at 0 -3.35) (layer "F.SilkS")
+    (fp_text reference "REF**" (at 0 -3.35) (layer "F.SilkS") hide
       (effects (font (size 1 1) (thickness 0.15)))
       (tstamp 5509e673-85ca-4e34-bc3b-0ea9ac129e73)
     )
@@ -1337,7 +1337,7 @@
     (descr "Mounting Hole 2.7mm, no annular, M2.5, DIN965")
     (tags "mounting hole 2.7mm no annular m2.5 din965")
     (attr exclude_from_pos_files exclude_from_bom)
-    (fp_text reference "REF**" (at 0 -3.35) (layer "F.SilkS")
+    (fp_text reference "REF**" (at 0 -3.35) (layer "F.SilkS") hide
       (effects (font (size 1 1) (thickness 0.15)))
       (tstamp 47057380-cc77-4286-8e95-c76cab574350)
     )
