@@ -23,7 +23,7 @@
 #include "esp_vfs.h"
 #include "esp_console.h"
 #include "esp_vfs_fat.h"
-
+#include "driver/gpio.h"
 
 #include "tinyusb.h"
 #include "tusb_cdc_acm.h"
@@ -32,6 +32,11 @@
 
 #include "bm83-uart-ctrl.h"
 #include "bm83-event-ids.h"
+
+// MUTE and DEEM PINS specific to the DAC I'm using.
+#define MUTE_PIN GPIO_NUM_2
+#define DEEM_PIN GPIO_NUM_3
+#define OUTPUT_PIN_SEL  ((1ULL<<MUTE_PIN) | (1ULL<<DEEM_PIN))
 
 static const char *TAG = "main";
 
@@ -47,6 +52,26 @@ void init_usb_cdc(void)
     vTaskDelay(1000 / portTICK_PERIOD_MS); // Wait a bit for devices to register
 }
 
+void init_dac_gpio(void)
+{
+    // Hopefully this doesn't conflict with the BM83 gpio setup.
+    gpio_config_t io_conf;
+    //disable interrupt
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    //set as output mode
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pins that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = OUTPUT_PIN_SEL;
+    //disable pull-down mode
+    io_conf.pull_down_en = 0;
+    //disable pull-up mode
+    io_conf.pull_up_en = 0;
+    //configure GPIO with the given settings
+    if(gpio_config(&io_conf) != ESP_OK)
+    {
+        ESP_LOGE(TAG,"install GPIO config failed");
+    }
+}
 
 static void util_print_unknown_bm83_event(void *event_data)
 {
@@ -94,6 +119,11 @@ static void bm83_event_handler(void *event_handler_arg, esp_event_base_t event_b
             ESP_LOGI(TAG,"A2DP %s",bm83_state->a2dp_link ? "ON" : "OFF");
             ESP_LOGI(TAG,"AVRCP %s",bm83_state->avrcp_link ? "ON" : "OFF");
             ESP_LOGI(TAG,"~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
+            // Handle connection state mute PIN
+            gpio_set_level(MUTE_PIN,!(bm83_state->a2dp_link));
+            gpio_set_level(DEEM_PIN,!(bm83_state->avrcp_link));
+            
             break;
 
         case CMD_ACK:
@@ -223,7 +253,15 @@ void app_main(void)
     bm83_parser_add_handler(bm83_hdl, bm83_event_handler, NULL);
     printf("Done!\n");
 
-    
+    // Setup DAC
+    ESP_LOGI(TAG,"Setup GPIO pins for DAC");
+    init_dac_gpio();
+
+    // On wakeup, set 1
+    gpio_set_level(MUTE_PIN,1);
+    gpio_set_level(DEEM_PIN,1);
+
+    ESP_LOGI(TAG,"Wakeup BM83!");
     // Send a command (raw, direct, non-blocked)
     uint8_t CMD1[7] = {170,0,3,2,0,83,168}; // {170,0,3,2,0,83,168};
     bm83_send_raw_immediate(bm83_hdl, &CMD1, 7);
