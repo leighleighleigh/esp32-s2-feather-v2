@@ -47,6 +47,11 @@ i2c_port_t i2c_port = I2C_NUM_0;
 #define PIN_NUM_CLK  36
 #define PIN_NUM_CS   12
 
+// Commands are 4 bits. Address is 12 bits. Data is in bytes (0-N).
+#define MCP_CMD_RESET 0x0 // - Address argument 0
+#define MCP_CMD_READ 0x3 // + A. Read SFR/RAM FROM address A.
+#define MCP_CMD_WRITE 0x2 // + A. Write SFR/RAM to address A.
+
 static const char *TAG = "example";
 
 #if HAS_BAT_IC
@@ -65,32 +70,40 @@ static esp_err_t i2c_master_driver_initialize(void)
 }
 #endif
 
-void mcp2518_cmd(spi_device_handle_t spi, const uint8_t cmd)
+uint32_t mcp2518_cmd(spi_device_handle_t spi, const uint8_t cmd, const uint16_t addr)
 {
     esp_err_t ret;
     spi_transaction_t t;
     memset(&t, 0, sizeof(t));       //Zero out the transaction
-    t.length=8;                     //Command is 8 bits
-    t.tx_buffer=&cmd;               //The data is the cmd itself
+    
+    // Setup flags for return value!
+    t.flags |= SPI_TRANS_USE_RXDATA;
+
+    // Set command, address, and data!
+    t.cmd = (cmd<<4) & 0b1111; // 4 bits only! 
+    t.addr = (addr<<4) & 0b111111111111; // 12 bits only!
+
+    t.length=0; // This is either for DATA only or for everything :/
+
     ret=spi_device_polling_transmit(spi, &t);  //Transmit!
     assert(ret==ESP_OK);            //Should have had no issues.
+
+    // Return any result (use if expected)
+    return *(uint32_t*)t.rx_data;
+}
+
+void mcp2518_reset(spi_device_handle_t spi)
+{
+    printf("Resetting CAN IC...\n");
+    mcp2518_cmd(spi,MCP_CMD_RESET,0x0);
 }
 
 void get_mcp2518_id(spi_device_handle_t spi)
 {
     printf("Asking MCP2518 for its ID...\n");
     // 1. SEND COMMAND FOR ID
-    mcp2518_cmd(spi, 0x14);
-
-    // 2. READ BACK RESULT?
-    spi_transaction_t t;
-    memset(&t, 0, sizeof(t));
-    t.length=8*1; // 32 bit
-    t.flags = SPI_TRANS_USE_RXDATA;
-    esp_err_t ret = spi_device_polling_transmit(spi, &t);
-    assert( ret == ESP_OK );
-
-    printf("GOT: 0x%X",*(uint32_t*)t.rx_data);
+    uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0x14);
+    printf("GOT: 0x%X",result);
 }
 
 static esp_err_t spi_master_driver_initialize(void)
@@ -113,7 +126,8 @@ static esp_err_t spi_master_driver_initialize(void)
     spi_device_handle_t spi;
     
     spi_device_interface_config_t devcfg={
-        .command_bits = 4, // 4 bit cmd, 12 bit address
+        .command_bits = 4, // 4 bit cmd
+        .address_bits = 12, // 12 bit address
         .clock_speed_hz=10*1000*1000,           //Clock out at 10 MHz (MCP2518 supports 20Mhz)
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
@@ -123,6 +137,10 @@ static esp_err_t spi_master_driver_initialize(void)
 
     ret=spi_bus_add_device(SPI_BUS,&devcfg,&spi);
     ESP_ERROR_CHECK(ret);
+
+
+    // Reset the IC
+    mcp2518_reset(spi);
 
     // Poll the MCP2518
     get_mcp2518_id(spi);
