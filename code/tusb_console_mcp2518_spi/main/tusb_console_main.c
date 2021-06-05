@@ -23,8 +23,9 @@
 #include "tusb_console.h"
 #include "sdkconfig.h"
 
-#define BAT_IC_ADDR 0x36
+#define HAS_BAT_IC 0
 
+#define BAT_IC_ADDR 0x36
 #define I2C_MASTER_TX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
 #define WRITE_BIT I2C_MASTER_WRITE  /*!< I2C master write */
@@ -48,7 +49,7 @@ i2c_port_t i2c_port = I2C_NUM_0;
 
 static const char *TAG = "example";
 
-
+#if HAS_BAT_IC
 static esp_err_t i2c_master_driver_initialize(void)
 {
     i2c_config_t conf = {
@@ -62,17 +63,18 @@ static esp_err_t i2c_master_driver_initialize(void)
     };
     return i2c_param_config(i2c_port, &conf);
 }
+#endif
 
 
 static void cs_high(spi_transaction_t* t)
 {
-    ESP_EARLY_LOGV(TAG, "cs high %d.", ((eeprom_context_t*)t->user)->cfg.cs_io);
-    gpio_set_level(((eeprom_context_t*)t->user)->cfg.cs_io, 1);
+    ESP_EARLY_LOGV(TAG, "cs high %d.",PIN_NUM_CS);
+    gpio_set_level(PIN_NUM_CS, 1);
 }
 
 static void cs_low(spi_transaction_t* t)
 {
-    gpio_set_level(((eeprom_context_t*)t->user)->cfg.cs_io, 0);
+    gpio_set_level(PIN_NUM_CS, 0);
     
 }
 
@@ -83,8 +85,8 @@ void get_mcp2518_id(spi_device_handle_t spi)
     esp_err_t ret;
     spi_transaction_t t;
     memset(&t, 0, sizeof(t));       //Zero out the transaction
-    t.cmd=0x1 // READ cmd
-    t.addr=0x1 // Address
+    t.cmd=0x1; // READ cmd
+    t.addr=0x1; // Address
     
     t.length=8;                     //Command is 8 bits
     t.user=(void*)0;                //D/C needs to be set to 0
@@ -115,7 +117,7 @@ static esp_err_t spi_master_driver_initialize(void)
     
     spi_device_interface_config_t devcfg={
         .command_bits = 4, // 4 bit cmd, 12 bit address
-        .clock_speed_hz=20*1000*1000,           //Clock out at 10 MHz (MCP2518 supports 20Mhz)
+        .clock_speed_hz=10*1000*1000,           //Clock out at 10 MHz (MCP2518 supports 20Mhz)
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
         .queue_size=7,                          //We want to be able to queue 7 transactions at a time
@@ -130,6 +132,7 @@ static esp_err_t spi_master_driver_initialize(void)
     return ret;
 }
 
+#if HAS_BAT_IC
 static esp_err_t i2c_master_sensor_read(i2c_port_t i2c_num, uint8_t reg, uint8_t *data_h, uint8_t *data_l)
 {
     int ret;
@@ -191,23 +194,25 @@ void task_max17048_read_vcell(void *ignore)
         
 	vTaskDelete(NULL);
 }
+#endif
 
 void app_main(void)
 {
     /* Setting TinyUSB up */
     ESP_LOGI(TAG, "USB initialization");
-
     tinyusb_config_t tusb_cfg = { 0 }; // the configuration uses default values
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
-
     tinyusb_config_cdcacm_t amc_cfg = { 0 }; // the configuration uses default values
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
-
     esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
     ESP_LOGI(TAG, "USB initialization DONE");
-
     vTaskDelay(1000 / portTICK_PERIOD_MS);
+    
+    ESP_LOGI(TAG, "USB initialization");
+    ESP_LOGI(TAG, "USB initialization");
+    ESP_LOGI(TAG, "USB initialization");
 
+    #if HAS_BAT_IC
     i2c_driver_install(i2c_port, I2C_MODE_MASTER, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
     i2c_master_driver_initialize();
 
@@ -237,7 +242,7 @@ void app_main(void)
 
     // Attempt to ask for battery chip data
     xTaskCreate(&task_max17048_read_vcell, "task_max17048_read_vcell",  2048, NULL, 6, NULL);
-
+    #endif
 
     spi_master_driver_initialize();
 

@@ -32,6 +32,11 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
   set(CMAKE_CROSSCOMPILING "TRUE")
 endif()
 
+# Set default install directory permissions.
+if(NOT DEFINED CMAKE_OBJDUMP)
+  set(CMAKE_OBJDUMP "/home/leigh/.espressif/tools/xtensa-esp32s2-elf/esp-2020r3-8.4.0/xtensa-esp32s2-elf/bin/xtensa-esp32s2-elf-objdump")
+endif()
+
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_mcp2518_spi/build/bootloader/esp-idf/xtensa/cmake_install.cmake")
@@ -48,7 +53,6 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_mcp2518_spi/build/bootloader/esp-idf/log/cmake_install.cmake")
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_mcp2518_spi/build/bootloader/esp-idf/partition_table/cmake_install.cmake")
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_mcp2518_spi/build/bootloader/esp-idf/bootloader/cmake_install.cmake")
-  include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_mcp2518_spi/build/bootloader/esp-idf/esp_system/cmake_install.cmake")
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_mcp2518_spi/build/bootloader/esp-idf/esptool_py/cmake_install.cmake")
   include("/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_mcp2518_spi/build/bootloader/esp-idf/main/cmake_install.cmake")
 

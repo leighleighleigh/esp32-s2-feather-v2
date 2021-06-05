@@ -16,7 +16,7 @@
     "bootloader" : { "offset" : "0x1000", "file" : "bootloader/bootloader.bin", "encrypted" : "false" },
     "app" : { "offset" : "0x10000", "file" : "tusb_console_with_i2c.bin", "encrypted" : "false" },
     "extra_esptool_args" : {
-        "after"  : "no_reset",
+        "after"  : "hard_reset",
         "before" : "default_reset",
         "stub"   : true,
         "chip"   : "esp32s2"

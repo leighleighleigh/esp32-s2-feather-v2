@@ -7,11 +7,11 @@ $<TARGET_FILE:__idf_esp_ipc>
 $<TARGET_FILE:__idf_spi_flash>
 $<TARGET_FILE:__idf_nvs_flash>
 $<TARGET_FILE:__idf_pthread>
-$<TARGET_FILE:__idf_esp_gdbstub>
 $<TARGET_FILE:__idf_esp_system>
 $<TARGET_FILE:__idf_esp_rom>
 $<TARGET_FILE:__idf_hal>
 $<TARGET_FILE:__idf_vfs>
+$<TARGET_FILE:__idf_esp_eth>
 $<TARGET_FILE:__idf_tcpip_adapter>
 $<TARGET_FILE:__idf_esp_netif>
 $<TARGET_FILE:__idf_esp_event>
@@ -42,6 +42,7 @@ $<TARGET_FILE:__idf_console>
 $<TARGET_FILE:__idf_nghttp>
 $<TARGET_FILE:__idf_esp-tls>
 $<TARGET_FILE:__idf_esp_adc_cal>
+$<TARGET_FILE:__idf_esp_gdbstub>
 $<TARGET_FILE:__idf_esp_hid>
 $<TARGET_FILE:__idf_tcp_transport>
 $<TARGET_FILE:__idf_esp_http_client>
@@ -65,7 +66,6 @@ $<TARGET_FILE:__idf_mqtt>
 $<TARGET_FILE:__idf_openssl>
 $<TARGET_FILE:__idf_perfmon>
 $<TARGET_FILE:__idf_spiffs>
-$<TARGET_FILE:__idf_touch_element>
 $<TARGET_FILE:__idf_ulp>
 $<TARGET_FILE:__idf_wifi_provisioning>
 $<TARGET_FILE:__idf_cmd_nvs>
