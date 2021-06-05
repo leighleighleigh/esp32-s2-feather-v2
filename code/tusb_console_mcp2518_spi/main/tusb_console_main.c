@@ -42,8 +42,8 @@ i2c_port_t i2c_port = I2C_NUM_0;
 
 #define SPI_BUS    SPI2_HOST
 #define DMA_CHAN SPI_BUS
-#define PIN_NUM_MISO 37
-#define PIN_NUM_MOSI 35
+#define PIN_NUM_MISO 35
+#define PIN_NUM_MOSI 37
 #define PIN_NUM_CLK  36
 #define PIN_NUM_CS   12
 
@@ -70,20 +70,76 @@ static esp_err_t i2c_master_driver_initialize(void)
 }
 #endif
 
-uint32_t mcp2518_cmd(spi_device_handle_t spi, const uint8_t cmd, const uint16_t addr)
+uint32_t mcp2518_cmd(spi_device_handle_t spi, const uint8_t cmd, const uint16_t addr, const uint8_t txLen, const uint8_t rxLen)
 {
     esp_err_t ret;
     spi_transaction_t t;
     memset(&t, 0, sizeof(t));       //Zero out the transaction
     
     // Setup flags for return value!
-    t.flags |= SPI_TRANS_USE_RXDATA;
+    if(rxLen != 0)
+    {
+        t.flags |= SPI_TRANS_USE_RXDATA;
+    }
+    
+    if(txLen != 0)
+    {
+        t.flags |= SPI_TRANS_USE_TXDATA;
+    }
 
-    // Set command, address, and data!
-    t.cmd = (cmd<<4) & 0b1111; // 4 bits only! 
-    t.addr = (addr<<4) & 0b111111111111; // 12 bits only!
+    // FORM THE ADDR AND CMD STUFF!
+    // I couldnt get variable bit lengths to work (4 for command, 12 for address)
+    // So I just made them manually out of two 8-bit parts (cmd + addr).
+    uint8_t b0 = ((cmd<<4) & 0b11110000); // Command is first 4 bytes
+    b0 = b0 | ((addr >> 8) & 0b00001111);
+    uint8_t b1 = addr & 0b11111111;
 
-    t.length=0; // This is either for DATA only or for everything :/
+    t.cmd = b0;
+    t.addr = b1;       
+    
+    t.length=txLen; // INCLUDES cmd + addr? INCLUDES data bytes.
+    t.rxlength=rxLen;
+
+    ret=spi_device_polling_transmit(spi, &t);  //Transmit!
+    assert(ret==ESP_OK);            //Should have had no issues.
+
+    // Return any result (use if expected)
+    return *(uint32_t*)t.rx_data;
+}
+
+uint32_t mcp2518_cmd_data(spi_device_handle_t spi, const uint8_t cmd, const uint16_t addr, const uint8_t txLen, const uint8_t rxLen, const uint8_t b0, const uint8_t b1, const uint8_t b2, const uint8_t b3)
+{
+    esp_err_t ret;
+    spi_transaction_t t;
+    memset(&t, 0, sizeof(t));       //Zero out the transaction
+    
+    // Setup flags for return value!
+    if(rxLen != 0)
+    {
+        t.flags |= SPI_TRANS_USE_RXDATA;
+    }
+    
+    if(txLen != 0)
+    {
+        t.flags |= SPI_TRANS_USE_TXDATA;
+        t.tx_data[0] = b0;
+        t.tx_data[1] = b1;
+        t.tx_data[2] = b2;
+        t.tx_data[3] = b3;
+    }
+
+    // FORM THE ADDR AND CMD STUFF!
+    // I couldnt get variable bit lengths to work (4 for command, 12 for address)
+    // So I just made them manually out of two 8-bit parts (cmd + addr).
+    uint8_t c0 = ((cmd<<4) & 0b11110000); // Command is first 4 bytes
+    c0 = c0 | ((addr >> 8) & 0b00001111);
+    uint8_t a1 = addr & 0b11111111;
+
+    t.cmd = c0;
+    t.addr = a1;       
+    
+    t.length=txLen; // INCLUDES cmd + addr? INCLUDES data bytes.
+    t.rxlength=rxLen;
 
     ret=spi_device_polling_transmit(spi, &t);  //Transmit!
     assert(ret==ESP_OK);            //Should have had no issues.
@@ -95,18 +151,37 @@ uint32_t mcp2518_cmd(spi_device_handle_t spi, const uint8_t cmd, const uint16_t 
 void mcp2518_reset(spi_device_handle_t spi)
 {
     printf("Resetting CAN IC...\n");
-    mcp2518_cmd(spi,MCP_CMD_RESET,0x0);
+    mcp2518_cmd(spi,MCP_CMD_RESET,0x0,0,0);
 }
 
 void get_mcp2518_id(spi_device_handle_t spi)
 {
     printf("Asking MCP2518 for its ID...\n");
     // 1. SEND COMMAND FOR ID
-    uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0x14);
-    printf("GOT: 0x%X",result);
+    uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0xE14,32,32);
+    printf("GOT: 0x%X\n",(uint32_t)result);
 }
 
-static esp_err_t spi_master_driver_initialize(void)
+void mcp2518_test_ram(spi_device_handle_t spi)
+{
+    printf("Writing 0xFF to RAM @ 0x400\n");
+    // 1. WRITE TO RAM
+    uint32_t result1 = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x400,32,0,0XFF,0XAA,0XBB,0XCC);
+    // 2. READ FROM RAM
+    uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0x400,32,32);
+    printf("GOT: 0x%X\n",(uint32_t)result);
+}
+
+
+// void get_mcp2518_id(spi_device_handle_t spi)
+// {
+//     printf("Asking MCP2518 for its ID...\n");
+//     // 1. SEND COMMAND FOR ID
+//     uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0x14,32,32);
+//     printf("GOT: 0x%X\n",(uint32_t)result);
+// }
+
+static spi_device_handle_t spi_master_driver_initialize(void)
 {
     esp_err_t ret;
     ESP_LOGI(TAG, "Initializing bus SPI%d...", SPI_BUS+1);
@@ -126,9 +201,9 @@ static esp_err_t spi_master_driver_initialize(void)
     spi_device_handle_t spi;
     
     spi_device_interface_config_t devcfg={
-        .command_bits = 4, // 4 bit cmd
-        .address_bits = 12, // 12 bit address
-        .clock_speed_hz=10*1000*1000,           //Clock out at 10 MHz (MCP2518 supports 20Mhz)
+        .command_bits = 8, // 4 bit cmd
+        .address_bits = 8, // 12 bit address
+        .clock_speed_hz=10000000,           //Clock out at 10 MHz (MCP2518 supports 20Mhz)
         .mode=0,                                //SPI mode 0
         .spics_io_num=PIN_NUM_CS,               //CS pin
         .queue_size=7,                          //We want to be able to queue 7 transactions at a time
@@ -138,13 +213,7 @@ static esp_err_t spi_master_driver_initialize(void)
     ret=spi_bus_add_device(SPI_BUS,&devcfg,&spi);
     ESP_ERROR_CHECK(ret);
 
-
-    // Reset the IC
-    mcp2518_reset(spi);
-
-    // Poll the MCP2518
-    get_mcp2518_id(spi);
-    return ret;
+    return spi;
 }
 
 #if HAS_BAT_IC
@@ -223,9 +292,10 @@ void app_main(void)
     ESP_LOGI(TAG, "USB initialization DONE");
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     
-    ESP_LOGI(TAG, "USB initialization");
-    ESP_LOGI(TAG, "USB initialization");
-    ESP_LOGI(TAG, "USB initialization");
+    ESP_LOGI(TAG, "SPI initialization");
+    spi_device_handle_t spi = spi_master_driver_initialize();
+    // ESP_LOGI(TAG, "USB initialization");
+    // ESP_LOGI(TAG, "USB initialization");
 
     #if HAS_BAT_IC
     i2c_driver_install(i2c_port, I2C_MODE_MASTER, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
@@ -259,7 +329,16 @@ void app_main(void)
     xTaskCreate(&task_max17048_read_vcell, "task_max17048_read_vcell",  2048, NULL, 6, NULL);
     #endif
 
-    spi_master_driver_initialize();
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+
+    // Reset the IC
+    mcp2518_reset(spi);
+
+    // Poll the MCP2518
+    get_mcp2518_id(spi);
+
+    // Do RAM test
+    mcp2518_test_ram(spi);
 
     // i2c_driver_delete(i2c_port);
 }
