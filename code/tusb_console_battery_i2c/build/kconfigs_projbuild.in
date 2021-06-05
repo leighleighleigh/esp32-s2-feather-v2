@@ -1,5 +1,0 @@
-source "/home/leigh/esp/esp-idf/components/app_update/Kconfig.projbuild"
-source "/home/leigh/esp/esp-idf/components/bootloader/Kconfig.projbuild"
-source "/home/leigh/esp/esp-idf/components/esptool_py/Kconfig.projbuild"
-source "/home/leigh/esp/esp-idf/components/partition_table/Kconfig.projbuild"
-source "/home/leigh/Documents/GitHub/esp32-s2-feather-v2/code/tusb_console_battery_i2c/main/Kconfig.projbuild"
