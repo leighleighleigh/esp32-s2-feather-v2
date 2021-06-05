@@ -65,35 +65,32 @@ static esp_err_t i2c_master_driver_initialize(void)
 }
 #endif
 
-
-static void cs_high(spi_transaction_t* t)
+void mcp2518_cmd(spi_device_handle_t spi, const uint8_t cmd)
 {
-    ESP_EARLY_LOGV(TAG, "cs high %d.",PIN_NUM_CS);
-    gpio_set_level(PIN_NUM_CS, 1);
-}
-
-static void cs_low(spi_transaction_t* t)
-{
-    gpio_set_level(PIN_NUM_CS, 0);
-    
+    esp_err_t ret;
+    spi_transaction_t t;
+    memset(&t, 0, sizeof(t));       //Zero out the transaction
+    t.length=8;                     //Command is 8 bits
+    t.tx_buffer=&cmd;               //The data is the cmd itself
+    ret=spi_device_polling_transmit(spi, &t);  //Transmit!
+    assert(ret==ESP_OK);            //Should have had no issues.
 }
 
 void get_mcp2518_id(spi_device_handle_t spi)
 {
-    printf("Asking MCP2518 for data...\n");
-    
-    esp_err_t ret;
-    spi_transaction_t t;
-    memset(&t, 0, sizeof(t));       //Zero out the transaction
-    t.cmd=0x1; // READ cmd
-    t.addr=0x1; // Address
-    
-    t.length=8;                     //Command is 8 bits
-    t.user=(void*)0;                //D/C needs to be set to 0
-    ret=spi_device_polling_transmit(spi, &t);  //Transmit!
-    assert(ret==ESP_OK);            //Should have had no issues.
+    printf("Asking MCP2518 for its ID...\n");
+    // 1. SEND COMMAND FOR ID
+    mcp2518_cmd(spi, 0x14);
 
-    printf("OK?\n");
+    // 2. READ BACK RESULT?
+    spi_transaction_t t;
+    memset(&t, 0, sizeof(t));
+    t.length=8*1; // 32 bit
+    t.flags = SPI_TRANS_USE_RXDATA;
+    esp_err_t ret = spi_device_polling_transmit(spi, &t);
+    assert( ret == ESP_OK );
+
+    printf("GOT: 0x%X",*(uint32_t*)t.rx_data);
 }
 
 static esp_err_t spi_master_driver_initialize(void)
