@@ -1,17 +1,3 @@
-/* USB Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
-// DESCRIPTION:
-// This example contains minimal code to make ESP32-S2 based device
-// recognizable by USB-host devices as a USB Serial Device printing output from
-// the application.
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/reent.h>
@@ -24,187 +10,87 @@
 #include "esp_console.h"
 #include "esp_vfs_fat.h"
 #include "cmd_system.h"
+#include "driver/i2c.h"
+#include "driver/gpio.h"
+#include "driver/uart.h"
+#include "string.h"
 
 #include "tinyusb.h"
 #include "tusb_cdc_acm.h"
 #include "tusb_console.h"
 #include "sdkconfig.h"
 
-// LEDC/PWM driver
-#include "driver/ledc.h"
+#define SDA_PIN 8
+#define SCL_PIN 9
+// gpio_num_t i2c_gpio_sda = 8;
+// gpio_num_t i2c_gpio_scl = 9;
 
-#define LEDC_LS_TIMER LEDC_TIMER_1
-#define LEDC_LS_MODE LEDC_LOW_SPEED_MODE
-#define LEDC_LS_CH0_GPIO (12)
-#define LEDC_LS_CH0_CHANNEL LEDC_CHANNEL_0
-#define LEDC_LS_CH1_GPIO (14)
-#define LEDC_LS_CH1_CHANNEL LEDC_CHANNEL_1
+static char TAG[] = "i2cscanner";
+static char tag[] = "i2cscanner";
 
-#define LEDC_TEST_CH_NUM (2) // There are 16 channels, two groups of 8. One groups is High Speed.
-#define LEDC_TEST_DUTY1 (7000) // 0.5V?
-#define LEDC_TEST_DUTY2 (7100) // 1V?
-#define LEDC_TEST_DUTY3 (7200) // 2V?
-#define LEDC_TEST_DUTY4 (7300) // 3V?
-#define LEDC_TEST_FADE_TIME (10)
+void task_i2cscanner(void *ignore) {
+	ESP_LOGD(tag, ">> i2cScanner");
+	i2c_config_t conf;
+	conf.mode = I2C_MODE_MASTER;
+	conf.sda_io_num = SDA_PIN;
+	conf.scl_io_num = SCL_PIN;
+	conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+	conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+	conf.master.clk_speed = 100000;
+	i2c_param_config(I2C_NUM_0, &conf);
 
-static const char *TAG = "example";
+	i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0);
+    // i2c_master_driver_initialize();
 
-static uint8_t lbuf[1024 + 1];
-uint8_t lbufIndex = 0;
-static uint8_t buf[1024 + 1];
+	int i;
+	esp_err_t espRc;
+	printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
+	printf("00:         ");
+	for (i=3; i< 0x78; i++) {
+		i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+		i2c_master_start(cmd);
+		i2c_master_write_byte(cmd, (i << 1) | I2C_MASTER_WRITE, 1 /* expect ack */);
+		i2c_master_stop(cmd);
 
-uint16_t pwmDuty = 0;
-uint16_t prevPwmDuty = 0;
-
-
-void tinyusb_cdc_rx_callback(int itf, cdcacm_event_t *event)
-{
-    /* initialization */
-    size_t rx_size = 0;
-
-    /* read */
-    esp_err_t ret = tinyusb_cdcacm_read(itf, buf, CONFIG_USB_CDC_RX_BUFSIZE, &rx_size);
-
-    if (ret == ESP_OK) {
-        // Append to long buffer
-        for(int i = 0; i<rx_size; i++)
-        {
-            lbuf[lbufIndex] = buf[i];
-            lbufIndex++;
-        }
-        
-        // buf[rx_size] = '\0';
-        if(buf[rx_size-1] == '\n' || buf[rx_size-1] == '\r' || buf[rx_size] == '\n' || buf[rx_size] == '\n')
-        {
-            lbuf[lbufIndex] = '\0';
-            // Convert to value
-            // uint16_t val = atoi((char*)lbuf);
-            char *eptr;
-            uint16_t val = strtoul((char*)lbuf, &eptr, 10);
-
-            if(val > 1000 && val < 16000){
-                printf("\nGot value: %s\n", lbuf);
-                pwmDuty = val;
-            }else{
-                printf("\nGot data (%d bytes): %s\n", lbufIndex, lbuf);
-            }
-            lbufIndex = 0;
-        }
-        
-    } else {
-        printf("Read error");
-    }
-
-    /* write back */
-    tinyusb_cdcacm_write_queue(itf, buf, rx_size);
-    tinyusb_cdcacm_write_flush(itf, 0);
+		espRc = i2c_master_cmd_begin(I2C_NUM_0, cmd, 10/portTICK_PERIOD_MS);
+		if (i%16 == 0) {
+			printf("\n%.2x:", i);
+		}
+		if (espRc == 0) {
+			printf(" %.2x", i);
+		} else {
+			printf(" --");
+		}
+		//ESP_LOGD(tag, "i=%d, rc=%d (0x%x)", i, espRc, espRc);
+		i2c_cmd_link_delete(cmd);
+	}
+	printf("\n");
+	vTaskDelete(NULL);
 }
+
 
 void app_main(void)
 {
     /* Setting TinyUSB up */
     ESP_LOGI(TAG, "USB initialization");
 
-    tinyusb_config_t tusb_cfg = {0}; // the configuration uses default values
+    tinyusb_config_t tusb_cfg = { 0 }; // the configuration uses default values
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
-    tinyusb_config_cdcacm_t amc_cfg = {
-    .usb_dev = TINYUSB_USBDEV_0,
-    .cdc_port = TINYUSB_CDC_ACM_0,
-    .rx_unread_buf_sz = 64,
-    .callback_rx = &tinyusb_cdc_rx_callback,
-    .callback_rx_wanted_char = NULL,
-    .callback_line_state_changed = NULL,
-    .callback_line_coding_changed = NULL
-};
+    tinyusb_config_cdcacm_t amc_cfg = { 0 }; // the configuration uses default values
     ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
 
     esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
     ESP_LOGI(TAG, "USB initialization DONE");
 
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-    // Setup the PWM stuff
-    int ch;
+	ESP_LOGI(TAG, "USB initialization PRINT");
 
-    /*
-     * Prepare and set configuration of timers
-     * that will be used by LED Controller
-     */
-    ledc_timer_config_t ledc_timer = {
-        .duty_resolution = LEDC_TIMER_14_BIT, // resolution of PWM duty 
-        .freq_hz = 1000,                      // frequency of PWM signal
-        .speed_mode = LEDC_LS_MODE,           // timer mode
-        .timer_num = LEDC_LS_TIMER,           // timer index
-        .clk_cfg = LEDC_AUTO_CLK,             // Auto select the source clock
-    };
+	vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-    // Set configuration of timer0 for high speed channels
-    ledc_timer_config(&ledc_timer);
-    /*
-     * Prepare individual configuration
-     * for each channel of LED Controller
-     * by selecting:
-     * - controller's channel number
-     * - output duty cycle, set initially to 0
-     * - GPIO number where LED is connected to
-     * - speed mode, either high or low
-     * - timer servicing selected channel
-     *   Note: if different channels use one timer,
-     *         then frequency and bit_num of these channels
-     *         will be the same
-     */
-    ledc_channel_config_t ledc_channel[LEDC_TEST_CH_NUM] = {
-        {.channel = LEDC_LS_CH0_CHANNEL,
-         .duty = 0,
-         .gpio_num = LEDC_LS_CH0_GPIO,
-         .speed_mode = LEDC_LS_MODE,
-         .hpoint = 0,
-         .timer_sel = LEDC_LS_TIMER},
-        {.channel = LEDC_LS_CH1_CHANNEL,
-         .duty = 0,
-         .gpio_num = LEDC_LS_CH1_GPIO,
-         .speed_mode = LEDC_LS_MODE,
-         .hpoint = 0,
-         .timer_sel = LEDC_LS_TIMER},
-    };
+    // i2c_driver_install(i2c_port, I2C_MODE_MASTER, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
+    // i2c_master_driver_initialize();
 
-    // Set LED Controller with previously prepared configuration
-    for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++)
-    {
-        ledc_channel_config(&ledc_channel[ch]);
-    }
-
-    // Initialize fade service.
-    ledc_fade_func_install(0);
-
-    // uint8_t *data = (uint8_t *) malloc(1024);
-
-    // while(1){
-    //     printf("LEDC duty = %d\n", LEDC_TEST_DUTY1);
-    //     for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++)
-    //     {
-    //         ledc_set_fade_with_time(ledc_channel[ch].speed_mode,ledc_channel[ch].channel, 7000, LEDC_TEST_FADE_TIME);
-    //         ledc_fade_start(ledc_channel[ch].speed_mode,ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
-    //     }
-    //     vTaskDelay(5000/portTICK_PERIOD_MS);
-    // }
-
-
-    while(1){
-    if(pwmDuty != prevPwmDuty)
-    {
-
-        printf("\nLEDC duty = %d\n", pwmDuty);
-        for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++)
-        {
-            ledc_set_fade_with_time(ledc_channel[ch].speed_mode,ledc_channel[ch].channel, pwmDuty, LEDC_TEST_FADE_TIME);
-            ledc_fade_start(ledc_channel[ch].speed_mode,ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
-        }   
-        
-        prevPwmDuty = pwmDuty;
-
-    }
-    }
-
+    xTaskCreate(&task_i2cscanner, "task_i2cscanner",  2048, NULL, 6, NULL);
 }
