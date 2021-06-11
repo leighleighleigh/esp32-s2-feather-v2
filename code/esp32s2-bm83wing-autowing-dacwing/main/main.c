@@ -35,6 +35,7 @@
 #include "sdkconfig.h"
 
 #define BAT_IC_ADDR 0x36
+#define DAC_IC_ADDR 0x1A
 
 #define I2C_MASTER_TX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
@@ -74,12 +75,12 @@ static esp_err_t i2c_master_driver_initialize(void)
     return i2c_param_config(i2c_port, &conf);
 }
 
-static esp_err_t i2c_master_sensor_test(i2c_port_t i2c_num, uint8_t reg, uint8_t *data_h, uint8_t *data_l)
+static esp_err_t i2c_master_sensor_test(i2c_port_t i2c_num, uint8_t address, uint8_t reg, uint8_t *data_h, uint8_t *data_l)
 {
     int ret;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, BAT_IC_ADDR << 1 | WRITE_BIT, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, address << 1 | WRITE_BIT, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, reg, ACK_CHECK_EN);
     i2c_master_stop(cmd);
     
@@ -94,7 +95,7 @@ static esp_err_t i2c_master_sensor_test(i2c_port_t i2c_num, uint8_t reg, uint8_t
 
     cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, BAT_IC_ADDR << 1 | READ_BIT, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, address << 1 | READ_BIT, ACK_CHECK_EN);
     i2c_master_read_byte(cmd, data_h, ACK_VAL);
     i2c_master_read_byte(cmd, data_l, NACK_VAL);
     i2c_master_stop(cmd);
@@ -122,9 +123,9 @@ void task_max17048_read_vcell(void *ignore)
 
         vTaskDelay(800/portTICK_PERIOD_MS);
 
-        espErr = i2c_master_sensor_test(i2c_port,0x02, &vcell_h,&vcell_l);
-        espErr = i2c_master_sensor_test(i2c_port,0x4, &soc_h,&soc_l);
-        espErr = i2c_master_sensor_test(i2c_port,0x16, &crate_h,&crate_l);
+        espErr = i2c_master_sensor_test(i2c_port,BAT_IC_ADDR,0x02, &vcell_h,&vcell_l);
+        espErr = i2c_master_sensor_test(i2c_port,BAT_IC_ADDR,0x4, &soc_h,&soc_l);
+        espErr = i2c_master_sensor_test(i2c_port,BAT_IC_ADDR,0x16, &crate_h,&crate_l);
         
         float lux = (float)(vcell_h<<8 | vcell_l) * (float)0.078125;
         printf("%.6f V\n", lux);
@@ -140,6 +141,110 @@ void task_max17048_read_vcell(void *ignore)
 
 	vTaskDelete(NULL);
 }
+
+
+
+void task_dac_start(void *ignore)
+{
+	esp_err_t espErr;
+
+    // Setup the PWRDN registers
+    uint8_t pwrReg = 0x6;
+    uint8_t activeReg = 0x9;
+    uint8_t clockReg = 0x8;
+    uint8_t dacReg = 0x5;
+    uint8_t interfaceReg = 0x7;
+
+    // SETUP CORE CLOCK
+    ESP_LOGI(TAG,"RESET!");
+    // Set ACTIVE registers
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd); // Start i2c
+    i2c_master_write_byte(cmd, DAC_IC_ADDR << 1 | WRITE_BIT, ACK_CHECK_EN); // Write address
+    i2c_master_write_byte(cmd, 0xF<<1, ACK_CHECK_EN); // Write register + B8
+    i2c_master_write_byte(cmd, 0, ACK_CHECK_EN); // Write data (8 bits)
+    i2c_master_stop(cmd); 
+    espErr = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_RATE_MS); // Perform operation with timeout
+    i2c_cmd_link_delete(cmd);
+    ESP_ERROR_CHECK(espErr);
+
+    vTaskDelay(1000 / portTICK_PERIOD_MS);   
+
+
+    // SETUP CORE CLOCK
+    ESP_LOGI(TAG,"SETTING SAMPLING CONTROL!");
+    // Set ACTIVE registers
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd); // Start i2c
+    i2c_master_write_byte(cmd, DAC_IC_ADDR << 1 | WRITE_BIT, ACK_CHECK_EN); // Write address
+
+    uint8_t firstByte = (clockReg<<1);
+    // uint8_t secondByte = 0b00000000;
+    uint8_t secondByte = 0b10011100;
+
+    i2c_master_write_byte(cmd, firstByte, ACK_CHECK_EN); // Write register + B8
+    i2c_master_write_byte(cmd, secondByte, ACK_CHECK_EN); // Write data (8 bits)
+    
+    i2c_master_stop(cmd); 
+    espErr = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_RATE_MS); // Perform operation with timeout
+    i2c_cmd_link_delete(cmd);
+    ESP_ERROR_CHECK(espErr);
+    
+    ESP_LOGI(TAG,"SETTING INTERFACE FORMAT!");
+    // Set ACTIVE registers
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd); // Start i2c
+    i2c_master_write_byte(cmd, DAC_IC_ADDR << 1 | WRITE_BIT, ACK_CHECK_EN); // Write address
+
+    i2c_master_write_byte(cmd, (interfaceReg<<1), ACK_CHECK_EN); // Write register + B8
+    i2c_master_write_byte(cmd, 0b00001010, ACK_CHECK_EN); // Write data (8 bits)
+    
+    i2c_master_stop(cmd); 
+    espErr = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_RATE_MS); // Perform operation with timeout
+    i2c_cmd_link_delete(cmd);
+    ESP_ERROR_CHECK(espErr);
+
+    ESP_LOGI(TAG,"SENDING POWER ON!");
+    // Set PWR registers
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd); // Start i2c
+    i2c_master_write_byte(cmd, DAC_IC_ADDR << 1 | WRITE_BIT, ACK_CHECK_EN); // Write address
+    
+    i2c_master_write_byte(cmd, (pwrReg <<1), ACK_CHECK_EN); // Write register + B8
+    i2c_master_write_byte(cmd, 0b01100111, ACK_CHECK_EN); // Write data (8 bits)
+
+    i2c_master_stop(cmd); // End
+    espErr = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_RATE_MS); // Perform operation with timeout
+    i2c_cmd_link_delete(cmd);
+    ESP_ERROR_CHECK(espErr);
+    
+    ESP_LOGI(TAG,"SENDING ACTIVE ON!");
+    // Set ACTIVE registers
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd); // Start i2c
+    i2c_master_write_byte(cmd, DAC_IC_ADDR << 1 | WRITE_BIT, ACK_CHECK_EN); // Write address
+    i2c_master_write_byte(cmd, (activeReg <<1), ACK_CHECK_EN); // Write register + B8
+    i2c_master_write_byte(cmd, 1, ACK_CHECK_EN); // Write data (8 bits)
+    i2c_master_stop(cmd); // End
+    espErr = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_RATE_MS); // Perform operation with timeout
+    i2c_cmd_link_delete(cmd);
+    ESP_ERROR_CHECK(espErr);
+    
+    ESP_LOGI(TAG,"UNMUTING!");
+    // Set ACTIVE registers
+    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd); // Start i2c
+    i2c_master_write_byte(cmd, DAC_IC_ADDR << 1 | WRITE_BIT, ACK_CHECK_EN); // Write address
+    i2c_master_write_byte(cmd, (dacReg <<1), ACK_CHECK_EN); // Write register + B8
+    i2c_master_write_byte(cmd, 0, ACK_CHECK_EN); // Write data (8 bits)
+    i2c_master_stop(cmd); // End
+    espErr = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_RATE_MS); // Perform operation with timeout
+    i2c_cmd_link_delete(cmd);
+    ESP_ERROR_CHECK(espErr);
+
+	vTaskDelete(NULL);
+}
+
 
 void util_bm83_wake()
 {
@@ -320,7 +425,7 @@ void app_main(void)
     xTaskCreate(rx_task, "uart_rx_task", 1024*2, NULL, configMAX_PRIORITIES, NULL);
 
     
-    vTaskDelay(5000 / portTICK_PERIOD_MS);    
+    // vTaskDelay(5000 / portTICK_PERIOD_MS);    
     // // [170, 0, 3, 2, 0, 52, 199]
     // // Press pair button
     // char SKIP_SONG_DATA[7] = {170,0,3,2,0,52,199};
@@ -342,5 +447,7 @@ void app_main(void)
     // char PLAYPAUSE_SONG_DATA[7] = {170, 0, 3, 4, 0, 7, 242};
     // uart_write_bytes(UART_NUM_1, &PLAYPAUSE_SONG_DATA, 7);
 
-    xTaskCreate(&task_i2cscanner, "task_i2cscanner",  2048, NULL, 6, NULL);
+    // xTaskCreate(&task_i2cscanner, "task_i2cscanner",  2048, NULL, 6, NULL);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);   
+    xTaskCreate(&task_dac_start, "task_dac_start", 2048, NULL, 7, NULL);
 }
