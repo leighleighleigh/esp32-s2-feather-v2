@@ -155,14 +155,14 @@ static void bm83_event_handler(void *event_handler_arg, esp_event_base_t event_b
             ESP_LOGI(TAG,"~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
             // Handle connection state mute PIN
-            gpio_set_level(MUTE_PIN,!(bm83_state->a2dp_link));
-            gpio_set_level(DEEM_PIN,1);
+            gpio_set_level(MUTE_PIN,!(bm83_state->btm_power));
+            gpio_set_level(DEEM_PIN,0);
             // gpio_set_level(DEEM_PIN,!(bm83_state->avrcp_link));
             
             if(bm83_state->btm_power)
             {
             // If we are completely connected, disable pairing.
-            if(bm83_state->acl_link && bm83_state->a2dp_link)
+            if(bm83_state->acl_link) //  && bm83_state->a2dp_link
             {
                 if(pairingMode)
                 {
@@ -170,7 +170,7 @@ static void bm83_event_handler(void *event_handler_arg, esp_event_base_t event_b
                 }
             }
             // If we are completely disconnected, enable pairing.
-            if(!bm83_state->acl_link && !bm83_state->a2dp_link)
+            if(!bm83_state->acl_link) //  && !bm83_state->a2dp_link
             {
                 if(!pairingMode)
                 {
@@ -313,7 +313,7 @@ void app_main(void)
 
     // On wakeup, set 1
     gpio_set_level(MUTE_PIN,1);
-    gpio_set_level(DEEM_PIN,1);
+    gpio_set_level(DEEM_PIN,0);
 
     ESP_LOGI(TAG,"Wakeup BM83!");
     // Send a command (raw, direct, non-blocked)
