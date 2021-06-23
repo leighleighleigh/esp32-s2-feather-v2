@@ -39,6 +39,8 @@
 #define OUTPUT_PIN_SEL  ((1ULL<<MUTE_PIN) | (1ULL<<DEEM_PIN))
 
 static const char *TAG = "main";
+bm83_parser_handle_t bm83_hdl = NULL;
+bool pairingMode = false;
 
 void init_usb_cdc(void)
 {
@@ -72,6 +74,38 @@ void init_dac_gpio(void)
         ESP_LOGE(TAG,"install GPIO config failed");
     }
 }
+
+
+void enter_pairing(void)
+{
+    ESP_LOGI(TAG,"Entering pairing mode!");
+    pairingMode = true;
+    // Enter pairing mode
+    uint8_t CMD5[7] = {170,0,3,2,0,0x50,171}; // {170,0,3,2,0,83,168};
+    uint8_t checksum = 0;
+    for(int c = 1; c<6; c++){
+        checksum += CMD5[c]; // Add bytes
+    }
+    checksum = 1 + (0xFF - checksum); // Perform checksum calc
+    CMD5[6] = checksum;
+    bm83_send_raw_immediate(bm83_hdl, &CMD5, 7);
+}
+
+void exit_pairing(void)
+{
+    ESP_LOGI(TAG,"Exit pairing mode!");
+    pairingMode = false;
+    // Enter pairing mode
+    uint8_t CMD5[7] = {170,0,3,2,0,0x6B,171}; // {170,0,3,2,0,83,168};
+    uint8_t checksum = 0;
+    for(int c = 1; c<6; c++){   
+        checksum += CMD5[c]; // Add bytes
+    }
+    checksum = 1 + (0xFF - checksum); // Perform checksum calc
+    CMD5[6] = checksum;
+    bm83_send_raw_immediate(bm83_hdl, &CMD5, 7);
+}
+
 
 static void util_print_unknown_bm83_event(void *event_data)
 {
@@ -122,8 +156,28 @@ static void bm83_event_handler(void *event_handler_arg, esp_event_base_t event_b
 
             // Handle connection state mute PIN
             gpio_set_level(MUTE_PIN,!(bm83_state->a2dp_link));
-            gpio_set_level(DEEM_PIN,!(bm83_state->avrcp_link));
+            gpio_set_level(DEEM_PIN,1);
+            // gpio_set_level(DEEM_PIN,!(bm83_state->avrcp_link));
             
+            if(bm83_state->btm_power)
+            {
+            // If we are completely connected, disable pairing.
+            if(bm83_state->acl_link && bm83_state->a2dp_link)
+            {
+                if(pairingMode)
+                {
+                    exit_pairing();
+                }
+            }
+            // If we are completely disconnected, enable pairing.
+            if(!bm83_state->acl_link && !bm83_state->a2dp_link)
+            {
+                if(!pairingMode)
+                {
+                    enter_pairing();
+                }
+            }
+            }
             break;
 
         case CMD_ACK:
@@ -248,7 +302,7 @@ void app_main(void)
 
     /* Setup BM83 driver/parser/thingy */
     bm83_parser_config_t config = BM83_CONFIG_DEFAULT();
-    bm83_parser_handle_t bm83_hdl = bm83_parser_init(&config);
+    bm83_hdl = bm83_parser_init(&config);
     // Attach our event handler
     bm83_parser_add_handler(bm83_hdl, bm83_event_handler, NULL);
     printf("Done!\n");
@@ -277,4 +331,6 @@ void app_main(void)
     
     uint8_t CMD4[7] = {170,0,3,2,0,82,169}; // {170,0,3,2,0,83,168};
     bm83_send_raw_immediate(bm83_hdl, &CMD4, 7);
+
+    // enter_pairing(&bm83_hdl);
 }
