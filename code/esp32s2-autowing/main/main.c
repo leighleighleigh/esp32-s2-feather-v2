@@ -20,7 +20,7 @@
 
 #include "sdkconfig.h"
 
-#define HAS_BAT_IC 0
+#define HAS_BAT_IC 1
 
 #define BAT_IC_ADDR 0x36
 #define I2C_MASTER_TX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
@@ -182,22 +182,59 @@ void mcp2518_set_bitrate_regs(spi_device_handle_t spi)
     uint8_t WAKFIL = 0b1; // Use physical CAN filter for wakeup of IC.
 
     // Apply over C1CON_READ
-    C1CON_READ |= REQOP << 16;
+    // First, split into four parts
+    uint8_t C1CON_3 = (C1CON_READ & 0xFF000000) >> 24;
+    uint8_t C1CON_2 = (C1CON_READ & 0x00FF0000) >> 16;
+    uint8_t C1CON_1 = (C1CON_READ & 0x0000FF00) >> 8;
+    uint8_t C1CON_0 = (C1CON_READ & 0x000000FF);
 
-    // uint32_t C1CON = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x0,32,0,REQOP,0x0,TSEG2,SJW);
+    printf("C1CON_3: 0x%X\n",(uint8_t)C1CON_3);
+    printf("C1CON_2: 0x%X\n",(uint8_t)C1CON_2);
+    printf("C1CON_1: 0x%X\n",(uint8_t)C1CON_1);
+    printf("C1CON_0: 0x%X\n",(uint8_t)C1CON_0);
 
+    // Clear REQOP, and apply.
+    C1CON_3 &= 0b11111000;
+    C1CON_3 |= REQOP;
+    // Clear BRSDIS and WAKFIL
+    C1CON_1 &= 0b11101110;
+    C1CON_1 |= BRSDIS << 4;
+    C1CON_1 |= WAKFIL;
+
+    // Build new C1CON
+    uint32_t C1CON = (C1CON_3 << 24) | (C1CON_2 << 16) | (C1CON_1 << 8) | (C1CON_0);
+    printf("C1CON: 0x%X\n",(uint32_t)C1CON);
+    uint32_t C1CON_WRITE = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x0,32,0,C1CON_3,C1CON_2,C1CON_1,C1CON_0);
+
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+    uint32_t C1NBTCFG_READ = mcp2518_cmd(spi,MCP_CMD_READ,0x4,32,32);
+    printf("C1NBTCFG_READ: 0x%X\n",(uint32_t)C1NBTCFG_READ);
+
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     printf("Settings bitrate regs\n");
     // 2. Set C1NBTCFG (Nominal Bit Time Config)
     uint8_t BRP = 4;
     uint8_t TSEG1 = 240;
     uint8_t TSEG2 = 60;
     uint8_t SJW = 60;
-    uint32_t C1NBTCFG = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x4,32,0,BRP,TSEG1,TSEG2,SJW);
+    uint32_t C1NBTCFG_WRITE = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x4,32,0,BRP,TSEG1,TSEG2,SJW);
     
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+    C1NBTCFG_READ = mcp2518_cmd(spi,MCP_CMD_READ,0x4,32,32);
+    printf("C1NBTCFG_READ: 0x%X\n",(uint32_t)C1NBTCFG_READ);
+    
+    // Request internal loopback mode
+    REQOP = 0b101; // External loopback Mode. // See Page 27 for REQOP values.
+    C1CON_3 &= 0b11111000;
+    C1CON_3 |= REQOP;
+    C1CON_WRITE = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x0,32,0,C1CON_3,C1CON_2,C1CON_1,C1CON_0);
 
-    // // 2. READ FROM RAM
-    // uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0x4,32,32);
-    // printf("GOT: 0x%X\n",(uint32_t)result);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+
+    // Re-check C1CON
+    C1CON_READ = mcp2518_cmd(spi, MCP_CMD_READ, 0x0,32,32);
+    printf("GOT: 0x%X\n",(uint32_t)C1CON_READ);
+    printf("OPMOD: 0x%X\n",(uint32_t)(C1CON_READ>>21)&0b111);
 }
 
 
@@ -281,42 +318,34 @@ void task_max17048_read_vcell(void *ignore)
 	esp_err_t espErr;
 
     // Can add loop here
-    vTaskDelay(800/portTICK_PERIOD_MS);
+    while(1)
+    {
 
-    espErr = i2c_master_sensor_read(i2c_port,0x02, &vcell_h,&vcell_l);
-    espErr = i2c_master_sensor_read(i2c_port,0x4, &soc_h,&soc_l);
-    espErr = i2c_master_sensor_read(i2c_port,0x16, &crate_h,&crate_l);
-    
-    float lux = (float)(vcell_h<<8 | vcell_l) * (float)0.078125;
-    printf("%.6f V\n", lux);
-    
-    float chrg = (float)(soc_h<<8 | soc_l) * (float)0.00390625;
-    printf("%.6f CHRG\n", chrg);
+        vTaskDelay(2000/portTICK_PERIOD_MS);
 
-    float crate = (float)(crate_h<<8 | crate_l) * (float)0.208;
-    printf("%.6f per hr\n", crate);
+        espErr = i2c_master_sensor_read(i2c_port,0x02, &vcell_h,&vcell_l);
+        espErr = i2c_master_sensor_read(i2c_port,0x4, &soc_h,&soc_l);
+        espErr = i2c_master_sensor_read(i2c_port,0x16, &crate_h,&crate_l);
         
-	vTaskDelete(NULL);
+        float cellVoltage = (float)(vcell_h<<8 | vcell_l) * (float)0.078125;
+        printf("%.4f V\n", cellVoltage/1000);
+        
+        float chargePercentage = (float)(soc_h<<8 | soc_l) * (float)0.00390625;
+        printf("%.3f %%\n", chargePercentage);
+
+        float crate = (float)(crate_h<<8 | crate_l) * (float)0.208;
+        printf("%.3f %% per hr\n", crate);
+            
+    }
+    vTaskDelete(NULL);
 }
 #endif
 
 void app_main(void)
 {
-    /* Setting TinyUSB up */
-    // ESP_LOGI(TAG, "USB initialization");
-    // tinyusb_config_t tusb_cfg = { 0 }; // the configuration uses default values
-    // ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
-    // tinyusb_config_cdcacm_t amc_cfg = { 0 }; // the configuration uses default values
-    // ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
-    // esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
-    // ESP_LOGI(TAG, "USB initialization DONE");
-    // vTaskDelay(1000 / portTICK_PERIOD_MS);
-    
     ESP_LOGI(TAG, "SPI initialization");
     spi_device_handle_t spi = spi_master_driver_initialize();
-    // ESP_LOGI(TAG, "USB initialization");
-    // ESP_LOGI(TAG, "USB initialization");
-
+ 
     #if HAS_BAT_IC
     i2c_driver_install(i2c_port, I2C_MODE_MASTER, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
     i2c_master_driver_initialize();
@@ -349,7 +378,7 @@ void app_main(void)
     xTaskCreate(&task_max17048_read_vcell, "task_max17048_read_vcell",  2048, NULL, 6, NULL);
     #endif
 
-    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
 
     // Reset the IC
     mcp2518_reset(spi);
