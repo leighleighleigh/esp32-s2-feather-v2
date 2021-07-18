@@ -166,9 +166,19 @@ void mcp2518_test_ram(spi_device_handle_t spi)
 {
     printf("Writing 0xFF to RAM @ 0x400\n");
     // 1. WRITE TO RAM
-    uint32_t result1 = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x400,32,0,0XFF,0XAA,0XBB,0XCC);
+    uint32_t result1 = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x400,32,0,0XFA,0XAA,0XBB,0XCC);
     // 2. READ FROM RAM
     uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0x400,32,32);
+    printf("GOT: 0x%X\n",(uint32_t)result);
+}
+
+void mcp2518_set_bitrate_regs(spi_device_handle_t spi)
+{
+    printf("Settings bitrate regs\n");
+    // 1. Set the regs :))
+    uint32_t result1 = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x4,32,0,0XFA,0XAA,0XBB,0XCC);
+    // 2. READ FROM RAM
+    uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0x4,32,32);
     printf("GOT: 0x%X\n",(uint32_t)result);
 }
 
