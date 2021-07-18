@@ -14,13 +14,10 @@
 #include "esp_console.h"
 #include "esp_vfs_fat.h"
 #include "cmd_system.h"
-// #include "cmd_i2ctools.h"
+
 #include "driver/i2c.h"
 #include "driver/spi_master.h"
 
-#include "tinyusb.h"
-#include "tusb_cdc_acm.h"
-#include "tusb_console.h"
 #include "sdkconfig.h"
 
 #define HAS_BAT_IC 0
@@ -107,7 +104,7 @@ uint32_t mcp2518_cmd(spi_device_handle_t spi, const uint8_t cmd, const uint16_t 
     return *(uint32_t*)t.rx_data;
 }
 
-uint32_t mcp2518_cmd_data(spi_device_handle_t spi, const uint8_t cmd, const uint16_t addr, const uint8_t txLen, const uint8_t rxLen, const uint8_t b0, const uint8_t b1, const uint8_t b2, const uint8_t b3)
+uint32_t mcp2518_cmd_data(spi_device_handle_t spi, const uint8_t cmd, const uint16_t addr, const uint8_t txLen, const uint8_t rxLen, const uint8_t b3, const uint8_t b2, const uint8_t b1, const uint8_t b0)
 {
     esp_err_t ret;
     spi_transaction_t t;
@@ -174,22 +171,35 @@ void mcp2518_test_ram(spi_device_handle_t spi)
 
 void mcp2518_set_bitrate_regs(spi_device_handle_t spi)
 {
+    printf("Requesting CONFIGURATION mode.\n");
+    // 1. Set Can Control register
+    // Firsly read the existing register.
+    uint32_t C1CON_READ = mcp2518_cmd(spi, MCP_CMD_READ, 0x0,32,32);
+    printf("GOT: 0x%X\n",(uint32_t)C1CON_READ);
+
+    uint8_t REQOP = 0b100; // See Page 27 for REQOP values.
+    uint8_t BRSDIS = 0b1; // Disable bit rate switching (to faster ones).
+    uint8_t WAKFIL = 0b1; // Use physical CAN filter for wakeup of IC.
+
+    // Apply over C1CON_READ
+    C1CON_READ |= REQOP << 16;
+
+    // uint32_t C1CON = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x0,32,0,REQOP,0x0,TSEG2,SJW);
+
     printf("Settings bitrate regs\n");
-    // 1. Set the regs :))
-    uint32_t result1 = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x4,32,0,0XFA,0XAA,0XBB,0XCC);
-    // 2. READ FROM RAM
-    uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0x4,32,32);
-    printf("GOT: 0x%X\n",(uint32_t)result);
+    // 2. Set C1NBTCFG (Nominal Bit Time Config)
+    uint8_t BRP = 4;
+    uint8_t TSEG1 = 240;
+    uint8_t TSEG2 = 60;
+    uint8_t SJW = 60;
+    uint32_t C1NBTCFG = mcp2518_cmd_data(spi,MCP_CMD_WRITE,0x4,32,0,BRP,TSEG1,TSEG2,SJW);
+    
+
+    // // 2. READ FROM RAM
+    // uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0x4,32,32);
+    // printf("GOT: 0x%X\n",(uint32_t)result);
 }
 
-
-// void get_mcp2518_id(spi_device_handle_t spi)
-// {
-//     printf("Asking MCP2518 for its ID...\n");
-//     // 1. SEND COMMAND FOR ID
-//     uint32_t result = mcp2518_cmd(spi, MCP_CMD_READ, 0x14,32,32);
-//     printf("GOT: 0x%X\n",(uint32_t)result);
-// }
 
 static spi_device_handle_t spi_master_driver_initialize(void)
 {
@@ -293,14 +303,14 @@ void task_max17048_read_vcell(void *ignore)
 void app_main(void)
 {
     /* Setting TinyUSB up */
-    ESP_LOGI(TAG, "USB initialization");
-    tinyusb_config_t tusb_cfg = { 0 }; // the configuration uses default values
-    ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
-    tinyusb_config_cdcacm_t amc_cfg = { 0 }; // the configuration uses default values
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
-    esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
-    ESP_LOGI(TAG, "USB initialization DONE");
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // ESP_LOGI(TAG, "USB initialization");
+    // tinyusb_config_t tusb_cfg = { 0 }; // the configuration uses default values
+    // ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
+    // tinyusb_config_cdcacm_t amc_cfg = { 0 }; // the configuration uses default values
+    // ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
+    // esp_tusb_init_console(TINYUSB_CDC_ACM_0); // log to usb
+    // ESP_LOGI(TAG, "USB initialization DONE");
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
     
     ESP_LOGI(TAG, "SPI initialization");
     spi_device_handle_t spi = spi_master_driver_initialize();
@@ -349,6 +359,9 @@ void app_main(void)
 
     // Do RAM test
     mcp2518_test_ram(spi);
+
+    // Set bitrate registers
+    mcp2518_set_bitrate_regs(spi);
 
     // i2c_driver_delete(i2c_port);
 }

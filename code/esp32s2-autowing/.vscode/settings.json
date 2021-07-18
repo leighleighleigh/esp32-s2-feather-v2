@@ -8,6 +8,7 @@
     "idf.port": "/dev/ttyACM1",
     "files.associations": {
         "string_view": "c",
-        "tuple": "c"
+        "tuple": "c",
+        "functional": "c"
     }
 }
