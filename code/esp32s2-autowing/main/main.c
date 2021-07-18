@@ -18,6 +18,9 @@
 #include "driver/i2c.h"
 #include "driver/spi_master.h"
 
+#include "lwip/err.h"
+#include "lwip/sys.h"
+
 #include "sdkconfig.h"
 
 #define HAS_BAT_IC 1
@@ -50,6 +53,7 @@ i2c_port_t i2c_port = I2C_NUM_0;
 #define MCP_CMD_WRITE 0x2 // + A. Write SFR/RAM to address A.
 
 static const char *TAG = "example";
+
 
 #if HAS_BAT_IC
 static esp_err_t i2c_master_driver_initialize(void)
@@ -342,7 +346,7 @@ void task_max17048_read_vcell(void *ignore)
 #endif
 
 void app_main(void)
-{
+{   
     ESP_LOGI(TAG, "SPI initialization");
     spi_device_handle_t spi = spi_master_driver_initialize();
  
