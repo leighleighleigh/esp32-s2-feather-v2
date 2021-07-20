@@ -337,7 +337,9 @@ void task_max17048_read_vcell(void *ignore)
         float chargePercentage = (float)(soc_h<<8 | soc_l) * (float)0.00390625;
         printf("%.3f %%\n", chargePercentage);
 
-        float crate = (float)(crate_h<<8 | crate_l) * (float)0.208;
+        // Fairly sure we need to convert this into a signed integer?
+        int16_t crateSigned = (crate_h<<8 | crate_l);
+        float crate = (float)crateSigned * (float)0.208;
         printf("%.3f %% per hr\n", crate);
             
     }
