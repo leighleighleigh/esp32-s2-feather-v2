@@ -1,4 +1,4 @@
-# esp32-s2-feather-v2
+# leighs-featherwings
 Various feathers and featherwings of my own design. This repo currently in a state of disarray while I finish uni.
 
 # Build Images
